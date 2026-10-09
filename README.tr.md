@@ -5,7 +5,7 @@
 # E-Helper — Casper Excalibur Kontrol Merkezi
 
 <p align="center">
-  <a href="https://github.com/berkevnl/E-Helper/releases"><img src="https://img.shields.io/badge/Sürüm-v1.0.0-0078D4?style=flat-square" alt="Sürüm v1.0.0"></a>
+  <a href="https://github.com/berkevnl/E-Helper/releases"><img src="https://img.shields.io/badge/Sürüm-v1.0.1-0078D4?style=flat-square" alt="Sürüm v1.0.1"></a>
   <a href="https://github.com/berkevnl/E-Helper/releases/latest/download/E-Helper.exe"><img src="https://img.shields.io/badge/İndir-E--Helper.exe-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Doğrudan İndir"></a>
   <a href="https://github.com/berkevnl/E-Helper/blob/main/LICENSE"><img src="https://img.shields.io/badge/Lisans-GPL--3.0-green.svg?style=flat-square" alt="Lisans"></a>
   <a href="#-neden-e-helper-temel-avantajlar"><img src="https://img.shields.io/badge/RAM-5--10_MB-success?style=flat-square" alt="RAM Tüketimi"></a>

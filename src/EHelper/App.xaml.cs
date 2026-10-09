@@ -27,11 +27,12 @@ namespace EHelper
         {
             base.OnStartup(e);
 
-            // Global Exception Handling
+            // Global Exception Handling with file logging
             AppDomain.CurrentDomain.UnhandledException += (s, args) =>
             {
                 if (args.ExceptionObject is Exception ex)
                 {
+                    LogCrash("AppDomain.UnhandledException", ex);
                     System.Windows.MessageBox.Show(
                         $"Beklenmeyen bir hata oluştu:\n{ex.Message}\n\n{ex.StackTrace}",
                         "E-Helper Hatası",
@@ -44,6 +45,7 @@ namespace EHelper
             DispatcherUnhandledException += (s, args) =>
             {
                 args.Handled = true;
+                LogCrash("DispatcherUnhandledException", args.Exception);
                 System.Windows.MessageBox.Show(
                     $"Arayüz hatası yakalandı:\n{args.Exception.Message}\n\n{args.Exception.StackTrace}",
                     "E-Helper Hatası",
@@ -236,6 +238,23 @@ namespace EHelper
         {
             ShutdownApp();
             base.OnExit(e);
+        }
+
+        private static void LogCrash(string context, Exception ex)
+        {
+            try
+            {
+                string logDir = System.IO.Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "E-Helper",
+                    "logs"
+                );
+                System.IO.Directory.CreateDirectory(logDir);
+                string logFile = System.IO.Path.Combine(logDir, "crash.log");
+                string entry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{context}] {ex.GetType().FullName}: {ex.Message}\n{ex.StackTrace}\n\n";
+                System.IO.File.AppendAllText(logFile, entry);
+            }
+            catch { }
         }
     }
 }

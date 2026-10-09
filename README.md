@@ -5,7 +5,7 @@
 # E-Helper — Casper Excalibur Control Center
 
 <p align="center">
-  <a href="https://github.com/berkevnl/E-Helper/releases"><img src="https://img.shields.io/badge/Version-v1.0.0-0078D4?style=flat-square" alt="Version v1.0.0"></a>
+  <a href="https://github.com/berkevnl/E-Helper/releases"><img src="https://img.shields.io/badge/Version-v1.0.1-0078D4?style=flat-square" alt="Version v1.0.1"></a>
   <a href="https://github.com/berkevnl/E-Helper/releases/latest/download/E-Helper.exe"><img src="https://img.shields.io/badge/Download-E--Helper.exe-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Direct Download"></a>
   <a href="https://github.com/berkevnl/E-Helper/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-green.svg?style=flat-square" alt="License"></a>
   <a href="#-why-e-helper-advantages"><img src="https://img.shields.io/badge/RAM-5--10_MB-success?style=flat-square" alt="RAM Usage"></a>

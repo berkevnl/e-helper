@@ -193,8 +193,8 @@ namespace EHelper
         public void PositionBottomRight()
         {
             var workArea = SystemParameters.WorkArea;
-            Left = workArea.Right - Width - 8;
-            Top = workArea.Bottom - Height - 8;
+            Left = Math.Max(workArea.Left + 8, workArea.Right - Width - 8);
+            Top = Math.Max(workArea.Top + 8, workArea.Bottom - Height - 8);
         }
 
         public void ToggleFlyout()

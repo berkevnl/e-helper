@@ -2,7 +2,8 @@
 # Builds clean, standalone and framework-dependent binaries with full assembly metadata and Authenticode digital signing.
 
 param(
-    [switch]$SkipSign = $false,
+    [switch]$SkipSign = $true,
+    [switch]$Sign = $false,
     [string]$CertSubject = "CN=E-Helper Open Source Community"
 )
 
@@ -49,7 +50,7 @@ $FrameworkSize = (Get-Item $FrameworkExe).Length / 1MB
 Write-Host "==> Standalone Size: $([Math]::Round($StandaloneSize, 2)) MB" -ForegroundColor Green
 Write-Host "==> Framework-Dependent Size: $([Math]::Round($FrameworkSize, 2)) MB" -ForegroundColor Green
 
-if (-not $SkipSign) {
+if ($Sign -and -not $SkipSign) {
     Write-Host "==> [3/3] Authenticode Digital Signing..." -ForegroundColor Cyan
     $cert = Get-ChildItem Cert:\CurrentUser\My -CodeSigningCert | Where-Object { $_.Subject -match "E-Helper" } | Select-Object -First 1
 
@@ -96,12 +97,14 @@ if (-not $SkipSign) {
     $sigFramework = Get-AuthenticodeSignature -FilePath $FrameworkExe
     Write-Host "==> Standalone Signature: $($sigStandalone.SignerCertificate.Subject) [Status: $($sigStandalone.Status)]" -ForegroundColor Green
     Write-Host "==> Framework Signature:  $($sigFramework.SignerCertificate.Subject) [Status: $($sigFramework.Status)]" -ForegroundColor Green
+} else {
+    Write-Host "==> [3/3] Skipping Digital Signing (clean unsigned open-source portable binary)" -ForegroundColor Gray
 }
 
 # Generate Release ZIP for Standalone
 [xml]$projXml = Get-Content $ProjectPath
 $appVersion = ($projXml.Project.PropertyGroup | Where-Object { $_.Version }).Version
-if (-not $appVersion) { $appVersion = "1.2.3" }
+if (-not $appVersion) { $appVersion = "1.0.0" }
 $zipPath = "$StandaloneDir\E-Helper-v$appVersion-win-x64.zip"
 Write-Host "==> Creating Standalone Release ZIP: $zipPath" -ForegroundColor Cyan
 if (Test-Path $zipPath) { Remove-Item -Force $zipPath }

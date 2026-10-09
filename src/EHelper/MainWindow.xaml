@@ -445,7 +445,7 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Version Info: Small and legible directly above Updates button -->
-                        <TextBlock x:Name="TxtVersionInfo" Grid.Column="0" Text="v1.1.0" FontSize="10" FontWeight="SemiBold" 
+                        <TextBlock x:Name="TxtVersionInfo" Grid.Column="0" Text="v1.0.1" FontSize="10" FontWeight="SemiBold" 
                                    Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="2,0,0,0"/>
 
                         <!-- Side-by-side Theme and Language toggles directly above Exit button -->
@@ -471,7 +471,7 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Updates button (Replaces old Theme button) -->
+                        <!-- Updates button -->
                         <Button x:Name="BtnCheckUpdates" Grid.Column="0" Content="📥 Güncellemeler" Style="{StaticResource FooterBtnStyle}" Click="BtnCheckUpdates_Click"/>
 
                         <!-- Refresh button -->
