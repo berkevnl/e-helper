@@ -5,10 +5,10 @@
 # E-Helper — Casper Excalibur Kontrol Merkezi
 
 <p align="center">
-  <a href="https://github.com/berkevnl/E-Helper/releases"><img src="https://img.shields.io/badge/Sürüm-v1.0.1-0078D4?style=flat-square" alt="Sürüm v1.0.1"></a>
+  <a href="https://github.com/berkevnl/E-Helper/releases"><img src="https://img.shields.io/badge/Sürüm-v1.1.0-0078D4?style=flat-square" alt="Sürüm v1.1.0"></a>
   <a href="https://github.com/berkevnl/E-Helper/releases/latest/download/E-Helper.exe"><img src="https://img.shields.io/badge/İndir-E--Helper.exe-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Doğrudan İndir"></a>
   <a href="https://github.com/berkevnl/E-Helper/blob/main/LICENSE"><img src="https://img.shields.io/badge/Lisans-GPL--3.0-green.svg?style=flat-square" alt="Lisans"></a>
-  <a href="#-neden-e-helper-temel-avantajlar"><img src="https://img.shields.io/badge/RAM-5--10_MB-success?style=flat-square" alt="RAM Tüketimi"></a>
+  <a href="#-neden-e-helper-temel-avantajlar"><img src="https://img.shields.io/badge/RAM-1--5_MB-success?style=flat-square" alt="RAM Tüketimi"></a>
   <a href="README.md"><img src="https://img.shields.io/badge/Language-English-blue?style=flat-square" alt="English Documentation"></a>
 </p>
 
@@ -31,7 +31,7 @@ ASUS ekosisteminde devrim yaratan **G-Helper** felsefesi temel alınarak tasarla
 ## ⚡ Neden E-Helper? (Temel Avantajlar)
 
 1. **Casper Excalibur'a Özel:** Sadece Casper Excalibur dizüstü bilgisayar donanımına odaklanmıştır; başka cihaz ve modellerin karmaşıklığını barındırmaz.
-2. **Ultra Düşük Bellek Tüketimi:** Arka planda sistem tepsisinde beklerken yalnızca **~5 - 10 MB RAM** harcar. Yönetim paneli ekranda aktif açıkken dahi tüketim **~20 - 35 MB** civarındadır.
+2. **Ultra Düşük Bellek Tüketimi:** Arka planda sistem tepsisinde beklerken yalnızca **~1 - 5 MB RAM** harcar. Yönetim paneli ekranda aktif açıkken dahi tüketim **~40 - 70 MB** aralığında seyreder.
 3. **Sıfır Arka Plan Yükü (Bloat-Free):** Arka planda çalışan servisler (daemons), telemetri takipçileri, analitik ajanları ve CPU'yu meşgul eden gereksiz süreçler yoktur.
 4. **Kalıcı Ayar Korunumu:** Yapılan ayarlar (klavye RGB aydınlatması, fan/güç modu, parlaklık) bilgisayar kapatılıp açıldığında dahi kaybolmaz; Windows Görev Zamanlayıcısı başlangıç entegrasyonu ve açılış sonrası EC firmware senkronizasyonu ile otomatik korunur.
 5. **Doğrudan Donanım Köprüsü:** Üreticinin hantal servisleri yerine doğrudan anakart gömülü denetleyicisiyle (EC / WMI ACPI SMI) güvenli ve yerel iletişim kurar.
@@ -54,13 +54,15 @@ ASUS ekosisteminde devrim yaratan **G-Helper** felsefesi temel alınarak tasarla
 * **Sistem Tepsisi İpucu (Tooltip):** Fare tepsi simgesinin üzerine getirildiğinde pencereyi açmadan anlık sıcaklık ve RPM bilgileri görüntülenir.
 
 ### 3. RGB Klavye Aydınlatma Denetimi
-* **Modlar:** Sabit (Static), Nefes Alma (Breathing), Renk Döngüsü (Dinamik) ve Gökkuşağı (Rainbow).
-* **Canlı Renk Spektrumu:** 360 derecelik renk yelpazesi üzerinden akıcı seçim ve popüler hazır renk butonları.
-* **Donanımsal Parlaklık Kademeleri:**
+* **Modlar:** Sabit (Static), Nefes Alma (Breathing), Renk Döngüsü (Dinamik), Gökkuşağı (Rainbow) ve **3-Bölge Özel Klavye Aydınlatması**.
+* **İnteraktif 3-Bölge Klavye Haritası:** Kuşbakışı 2D 3 parçalı klavye sembolü ile Sol (WASD), Orta ve Sağ (Numpad) alanlarına bağımsız renk tanımlayabilme.
+* **Modern Renk Paleti:** Windows 11 tarzı 2D renk alanı, 1D ton kaydırıcısı, Hex kodu girişi, RGB değerleri ve hazır renk kartelasıyla zengin renk seçimi.
+* **Donanımsal Parlaklık Kademeleri (Dolgulu Gösterge):**
   * `0` : **Kapalı (%0)** — Tüm klavye ışıklarını donanımsal olarak kapatır.
   * `1` : **%50 Parlaklık** — Dengeli ortam parlaklığı.
   * `2` : **%100 Parlaklık** — Tam parlaklık seviyesi.
-* **Yeniden Başlatmada Korunum:** Bilgisayar yeniden başlatıldığında klavye aydınlatma modunuz, parlaklığınız ve renginiz otomatik olarak tekrar uygulanır.
+  * *Kaydırıcı çubuğun istenen noktasına tıklanarak doğrudan ayarlanabilir.*
+* **Yeniden Başlatmada Korunum:** Bilgisayar yeniden başlatıldığında klavye aydınlatma modunuz, parlaklığınız ve bölge renkleriniz otomatik olarak tekrar uygulanır.
 
 ### 4. Kullanılabilirlik & Sistem Entegrasyonu
 * **Başlangıçta Çalıştır:** Windows açılışında UAC uyarısı vermeden arka planda sessizce başlatılan Görev Zamanlayıcısı entegrasyonu.

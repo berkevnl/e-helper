@@ -16,6 +16,7 @@ namespace EHelper.Core
         void ResetFansToAuto();
         bool SetLed(LedZone zone, LedMode mode, byte brightness, byte r, byte g, byte b);
         bool SetAllKeyboardLed(LedMode mode, byte brightness, byte r, byte g, byte b);
+        bool SetKeyboardTripleZone(byte brightness, (byte r, byte g, byte b) left, (byte r, byte g, byte b) center, (byte r, byte g, byte b) right);
         bool TurnOffAllLights();
     }
 }

@@ -104,6 +104,14 @@ namespace EHelper.Hardware.Simulation
             return SetLed(LedZone.AllKeyboard, mode, brightness, r, g, b);
         }
 
+        public bool SetKeyboardTripleZone(byte brightness, (byte r, byte g, byte b) left, (byte r, byte g, byte b) center, (byte r, byte g, byte b) right)
+        {
+            _currentLedMode = LedMode.TripleZone;
+            _brightness = brightness;
+            _color = left;
+            return true;
+        }
+
         public bool TurnOffAllLights()
         {
             return SetLed(LedZone.All, LedMode.Off, 0, 0, 0, 0);

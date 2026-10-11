@@ -6,9 +6,9 @@
         xmlns:local="clr-namespace:EHelper"
         mc:Ignorable="d"
         Title="E-Helper"
-        Icon="Assets/app.ico"
-        Height="615" 
-        Width="420"
+        Icon="/Assets/app.ico"
+        Height="660" 
+        Width="425"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
@@ -48,6 +48,8 @@
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
             <Setter Property="Padding" Value="8,10"/>
+            <Setter Property="HorizontalContentAlignment" Value="Center"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
@@ -56,7 +58,7 @@
                                 BorderBrush="{TemplateBinding BorderBrush}"
                                 BorderThickness="{TemplateBinding BorderThickness}"
                                 CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
                         </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
@@ -146,6 +148,163 @@
                                 <Setter TargetName="highlight" Property="Opacity" Value="1"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Modern G-Helper Flat ComboBox Style -->
+        <ControlTemplate x:Key="ComboBoxToggleButtonTemplate" TargetType="ToggleButton">
+            <Border x:Name="border"
+                    Background="{DynamicResource TileBg}"
+                    BorderBrush="{DynamicResource TileBorder}"
+                    BorderThickness="1"
+                    CornerRadius="4">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="24"/>
+                    </Grid.ColumnDefinitions>
+                    <Path x:Name="Arrow"
+                          Grid.Column="1"
+                          Data="M 0 0 L 4 4 L 8 0 Z"
+                          Fill="{DynamicResource TextMuted}"
+                          HorizontalAlignment="Center"
+                          VerticalAlignment="Center"/>
+                </Grid>
+            </Border>
+            <ControlTemplate.Triggers>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter TargetName="border" Property="Background" Value="{DynamicResource TileHoverBg}"/>
+                    <Setter TargetName="Arrow" Property="Fill" Value="{DynamicResource TextPrimary}"/>
+                </Trigger>
+                <Trigger Property="IsChecked" Value="True">
+                    <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource TileActiveBorder}"/>
+                </Trigger>
+            </ControlTemplate.Triggers>
+        </ControlTemplate>
+
+        <Style x:Key="GHelperComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Height" Value="32"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="UseLayoutRounding" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
+                        <Grid>
+                            <ToggleButton x:Name="ToggleButton"
+                                          Template="{StaticResource ComboBoxToggleButtonTemplate}"
+                                          Focusable="False"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
+                                          ClickMode="Press"/>
+                            <ContentPresenter x:Name="ContentSite"
+                                              IsHitTestVisible="False"
+                                              Content="{TemplateBinding SelectionBoxItem}"
+                                              Margin="10,0,24,0"
+                                              VerticalAlignment="Center"
+                                              HorizontalAlignment="Left"/>
+                            <Popup x:Name="Popup"
+                                   Placement="Bottom"
+                                   IsOpen="{TemplateBinding IsDropDownOpen}"
+                                   AllowsTransparency="True"
+                                   Focusable="False"
+                                   PopupAnimation="Slide">
+                                <Border x:Name="DropDownBorder"
+                                        Background="{DynamicResource WindowBg}"
+                                        BorderBrush="{DynamicResource TileBorder}"
+                                        BorderThickness="1"
+                                        CornerRadius="4"
+                                        Margin="0,2,0,4"
+                                        MinWidth="{Binding ActualWidth, ElementName=ToggleButton}">
+                                    <ScrollViewer Margin="2" SnapsToDevicePixels="True">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                    </ScrollViewer>
+                                </Border>
+                            </Popup>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="GHelperComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Padding" Value="10,6"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="b" Background="Transparent" CornerRadius="3" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource TileHoverBg}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource TileActiveBg}"/>
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource TileActiveBorder}"/>
+                                <Setter TargetName="b" Property="BorderThickness" Value="1"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Filled Track Slider Style (G-Helper / Windows 11 style) -->
+        <Style x:Key="ModernBrightnessSliderStyle" TargetType="Slider">
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="UseLayoutRounding" Value="True"/>
+            <Setter Property="IsMoveToPointEnabled" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Slider">
+                        <Grid VerticalAlignment="Center" Height="22" Background="Transparent">
+                            <!-- Background Full Track (Dark Gray) -->
+                            <Border Height="4" Margin="6,0,6,0" Background="{DynamicResource ProgressTrack}" CornerRadius="2" VerticalAlignment="Center"/>
+                            
+                            <!-- Track Layer with Thumb and Decrease Button (Filled Blue) -->
+                            <Track x:Name="PART_Track">
+                                <Track.DecreaseRepeatButton>
+                                    <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" Height="4" Margin="6,0,0,0" VerticalAlignment="Center">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="{DynamicResource AccentBlue}" CornerRadius="2"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.DecreaseRepeatButton>
+                                <Track.Thumb>
+                                    <Thumb Focusable="False" Width="14" Height="14" Cursor="Hand">
+                                        <Thumb.Template>
+                                            <ControlTemplate TargetType="Thumb">
+                                                <Border Width="14" Height="14" CornerRadius="7" 
+                                                        Background="{DynamicResource TextPrimary}" 
+                                                        BorderBrush="{DynamicResource AccentBlue}" BorderThickness="2">
+                                                    <Border.Effect>
+                                                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.4" Color="#000000"/>
+                                                    </Border.Effect>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Thumb.Template>
+                                    </Thumb>
+                                </Track.Thumb>
+                                <Track.IncreaseRepeatButton>
+                                    <RepeatButton Command="Slider.IncreaseLarge" Focusable="False" Height="4" VerticalAlignment="Center">
+                                        <RepeatButton.Template>
+                                            <ControlTemplate TargetType="RepeatButton">
+                                                <Border Background="Transparent"/>
+                                            </ControlTemplate>
+                                        </RepeatButton.Template>
+                                    </RepeatButton>
+                                </Track.IncreaseRepeatButton>
+                            </Track>
+                        </Grid>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
@@ -339,26 +498,43 @@
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <TextBlock x:Name="LblBrightnessHeader" Text="Parlaklık: " FontSize="12" Foreground="{DynamicResource TextMuted}"/>
-                            <TextBlock x:Name="TxtBrightnessIcon" Text="🔆" FontSize="14" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TxtBrightnessIcon" Text="%100" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                         </StackPanel>
                     </Grid>
 
-                    <!-- Mode Selector Strip -->
+                    <!-- Mode Selector Dropdown & Side Color Button (G-Helper / User Reference Style) -->
                     <Grid Margin="0,0,0,8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="4"/>
-                            <ColumnDefinition Width="1.1*"/>
-                            <ColumnDefinition Width="4"/>
-                            <ColumnDefinition Width="1.1*"/>
-                            <ColumnDefinition Width="4"/>
-                            <ColumnDefinition Width="1.2*"/>
+                            <ColumnDefinition Width="8"/>
+                            <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <Button x:Name="BtnLedStatic" Grid.Column="0" Content="✨ Sabit" Style="{StaticResource ActiveGHelperTileStyle}" FontSize="11" Padding="2,6" Click="BtnLedStatic_Click"/>
-                        <Button x:Name="BtnLedBreathing" Grid.Column="2" Content="💨 Nefes" Style="{StaticResource GHelperTileStyle}" FontSize="11" Padding="2,6" Click="BtnLedBreathing_Click"/>
-                        <Button x:Name="BtnLedDynamic" Grid.Column="4" Content="💫 Dinamik" Style="{StaticResource GHelperTileStyle}" FontSize="11" Padding="2,6" Click="BtnLedDynamic_Click"/>
-                        <Button x:Name="BtnLedRainbow" Grid.Column="6" Content="🌈 Gökkuşağı" Style="{StaticResource GHelperTileStyle}" FontSize="11" Padding="2,6" Click="BtnLedRainbow_Click"/>
+                        <!-- Left: Mode Dropdown Selector -->
+                        <ComboBox x:Name="CmbLedMode" Grid.Column="0" 
+                                  Style="{StaticResource GHelperComboBoxStyle}" 
+                                  ItemContainerStyle="{StaticResource GHelperComboBoxItemStyle}"
+                                  SelectionChanged="CmbLedMode_SelectionChanged">
+                            <ComboBoxItem Content="✨ Sabit" Tag="Static"/>
+                            <ComboBoxItem Content="💨 Nefes" Tag="Breathing"/>
+                            <ComboBoxItem Content="💫 Dinamik" Tag="ColorfulCycle"/>
+                            <ComboBoxItem Content="🌈 Gökkuşağı" Tag="Rainbow"/>
+                            <ComboBoxItem Content="🎨 3-Bölge" Tag="TripleZone"/>
+                        </ComboBox>
+
+                        <!-- Right: Side Color Button (Always visible; enabled for Static, Breathing, TripleZone) -->
+                        <Button x:Name="BtnModeColorAction" Grid.Column="2" 
+                                Style="{StaticResource GHelperTileStyle}" 
+                                Height="32" Padding="0"
+                                Click="BtnModeColorAction_Click">
+                            <Grid Width="160" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtModeColorActionLabel" Text="Renk" FontSize="12" 
+                                           Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,0,0"/>
+                                <Border x:Name="BrdModeColorIndicator" Width="14" Height="14" CornerRadius="2" 
+                                        Background="#EF4444" BorderBrush="#88FFFFFF" BorderThickness="1" 
+                                        HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
+                            </Grid>
+                        </Button>
                     </Grid>
 
                     <!-- Brightness Slider -->
@@ -367,54 +543,81 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="LblBrightnessTitle" Text="Parlaklık" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="LblBrightnessTitle" Text="Parlaklık" FontSize="12" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                         <Slider x:Name="SliderBrightness" Grid.Column="1" Margin="12,0,0,0" Minimum="0" Maximum="2" Value="2" 
+                                Style="{StaticResource ModernBrightnessSliderStyle}"
                                 TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="SliderBrightness_ValueChanged"/>
                     </Grid>
 
-                    <!-- Color Palette & Custom Picker (Only shown in Static and Breathing modes) -->
-                    <Grid x:Name="PnlColorSection" Margin="0,0,0,4">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="10"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
+                    <!-- Bird's-eye 2D 3-Piece Keyboard Symbol (Visible only in 3-Bölge mode) -->
+                    <!-- Each segment has its independent crisp border and color swatch -->
+                    <Border x:Name="PnlTripleZoneDiagram" Visibility="Collapsed" Margin="0,0,0,6" 
+                            Background="{DynamicResource DiagramBg}" BorderBrush="{DynamicResource TileBorder}" 
+                            BorderThickness="1" CornerRadius="5" Padding="6,6"
+                            RenderOptions.ClearTypeHint="Enabled"
+                            TextOptions.TextFormattingMode="Display"
+                            TextOptions.TextRenderingMode="ClearType"
+                            TextOptions.TextHintingMode="Fixed">
+                        <StackPanel>
+                            <!-- Minimalist Header -->
+                            <Grid Margin="2,0,2,6">
+                                <TextBlock x:Name="TxtDiagramTitle" Text="Bölge Seç ve Rengini Belirle:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                            </Grid>
 
-                        <!-- Left: Özel Renk Seç Butonu ve Aktif Renk Göstergesi -->
-                        <StackPanel Grid.Column="0" VerticalAlignment="Center">
-                            <TextBlock x:Name="TxtCustomColorTitle" Text="Özel Renk" FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,3"/>
-                            <Button x:Name="BtnCustomColor" Style="{StaticResource GHelperTileStyle}" Height="36" Padding="8,4" Click="BtnCustomColor_Click">
-                                <Grid HorizontalAlignment="Center">
-                                    <Grid.ColumnDefinitions>
-                                        <ColumnDefinition Width="Auto"/>
-                                        <ColumnDefinition Width="8"/>
-                                        <ColumnDefinition Width="Auto"/>
-                                    </Grid.ColumnDefinitions>
-                                    <Border x:Name="BrdActiveColorPreview" Grid.Column="0" Width="14" Height="14" CornerRadius="7" 
-                                            Background="#00B4FF" BorderBrush="#80FFFFFF" BorderThickness="1.5" VerticalAlignment="Center"/>
-                                    <StackPanel Grid.Column="2" VerticalAlignment="Center" HorizontalAlignment="Left">
-                                        <TextBlock Text="🎨 Özel Renk Seç" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                                        <TextBlock x:Name="TxtActiveHex" Text="#00B4FF" FontSize="9" FontFamily="Consolas, Segoe UI" Foreground="{DynamicResource TextMuted}"/>
-                                    </StackPanel>
-                                </Grid>
-                            </Button>
-                        </StackPanel>
+                            <!-- 2D Bird's-eye 3-Piece Keyboard Schematic -->
+                            <Grid Height="34">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="1.15*"/>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
 
-                        <!-- Right: Hazır Renkler (Önceki gibi) -->
-                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
-                            <TextBlock x:Name="TxtPresetsTitle" Text="Hazır Renkler" FontSize="10" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,3"/>
-                            <UniformGrid Columns="4" Rows="2">
-                                <Button Style="{StaticResource ColorPresetButtonStyle}" Background="#00E5FF" ToolTip="Cyan" Tag="#00E5FF" Click="ColorPreset_Click"/>
-                                <Button Style="{StaticResource ColorPresetButtonStyle}" Background="#0090FF" ToolTip="Mavi" Tag="#0090FF" Click="ColorPreset_Click"/>
-                                <Button Style="{StaticResource ColorPresetButtonStyle}" Background="#10B981" ToolTip="Yeşil" Tag="#10B981" Click="ColorPreset_Click"/>
-                                <Button Style="{StaticResource ColorPresetButtonStyle}" Background="#F59E0B" ToolTip="Turuncu" Tag="#F59E0B" Click="ColorPreset_Click"/>
-                                <Button Style="{StaticResource ColorPresetButtonStyle}" Background="#EF4444" ToolTip="Kırmızı" Tag="#EF4444" Click="ColorPreset_Click"/>
-                                <Button Style="{StaticResource ColorPresetButtonStyle}" Background="#8B5CF6" ToolTip="Mor" Tag="#8B5CF6" Click="ColorPreset_Click"/>
-                                <Button Style="{StaticResource ColorPresetButtonStyle}" Background="#EC4899" ToolTip="Pembe" Tag="#EC4899" Click="ColorPreset_Click"/>
-                                <Button Style="{StaticResource ColorPresetButtonStyle}" Background="#FFFFFF" ToolTip="Beyaz" Tag="#FFFFFF" Click="ColorPreset_Click"/>
-                            </UniformGrid>
+                                <!-- Piece 1: Sol Parça (Left Zone) -->
+                                <Border x:Name="BrdZoneLeft" Grid.Column="0" CornerRadius="4" BorderThickness="1" 
+                                        BorderBrush="{DynamicResource TileBorder}" Background="{DynamicResource TileBg}"
+                                        Cursor="Hand" MouseLeftButtonDown="BtnZoneLeft_Click">
+                                    <Grid Margin="4,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="DotZoneLeft" Grid.Column="0" Width="10" Height="10" CornerRadius="2" Background="#00E5FF" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblZoneLeft" Grid.Column="1" Text="Sol" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Piece 2: Orta Parça (Center Zone) -->
+                                <Border x:Name="BrdZoneCenter" Grid.Column="2" CornerRadius="4" BorderThickness="1" 
+                                        BorderBrush="{DynamicResource TileBorder}" Background="{DynamicResource TileBg}"
+                                        Cursor="Hand" MouseLeftButtonDown="BtnZoneCenter_Click">
+                                    <Grid Margin="4,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="DotZoneCenter" Grid.Column="0" Width="10" Height="10" CornerRadius="2" Background="#22C55E" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblZoneCenter" Grid.Column="1" Text="Orta" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+
+                                <!-- Piece 3: Sağ Parça (Right Zone) -->
+                                <Border x:Name="BrdZoneRight" Grid.Column="4" CornerRadius="4" BorderThickness="1" 
+                                        BorderBrush="{DynamicResource TileBorder}" Background="{DynamicResource TileBg}"
+                                        Cursor="Hand" MouseLeftButtonDown="BtnZoneRight_Click">
+                                    <Grid Margin="4,2">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto"/>
+                                            <ColumnDefinition Width="*"/>
+                                        </Grid.ColumnDefinitions>
+                                        <Border x:Name="DotZoneRight" Grid.Column="0" Width="10" Height="10" CornerRadius="2" Background="#EF4444" VerticalAlignment="Center"/>
+                                        <TextBlock x:Name="LblZoneRight" Grid.Column="1" Text="Sağ" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                                    </Grid>
+                                </Border>
+                            </Grid>
                         </StackPanel>
-                    </Grid>
+                    </Border>
                 </StackPanel>
 
                 <!-- 5: System Settings (Startup Checkbox) -->

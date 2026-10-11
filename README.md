@@ -5,10 +5,10 @@
 # E-Helper — Casper Excalibur Control Center
 
 <p align="center">
-  <a href="https://github.com/berkevnl/E-Helper/releases"><img src="https://img.shields.io/badge/Version-v1.0.1-0078D4?style=flat-square" alt="Version v1.0.1"></a>
+  <a href="https://github.com/berkevnl/E-Helper/releases"><img src="https://img.shields.io/badge/Version-v1.1.0-0078D4?style=flat-square" alt="Version v1.1.0"></a>
   <a href="https://github.com/berkevnl/E-Helper/releases/latest/download/E-Helper.exe"><img src="https://img.shields.io/badge/Download-E--Helper.exe-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Direct Download"></a>
   <a href="https://github.com/berkevnl/E-Helper/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-green.svg?style=flat-square" alt="License"></a>
-  <a href="#-why-e-helper-advantages"><img src="https://img.shields.io/badge/RAM-5--10_MB-success?style=flat-square" alt="RAM Usage"></a>
+  <a href="#-why-e-helper-advantages"><img src="https://img.shields.io/badge/RAM-1--5_MB-success?style=flat-square" alt="RAM Usage"></a>
   <a href="README.tr.md"><img src="https://img.shields.io/badge/Dil-T%C3%BCrk%C3%A7e-red?style=flat-square" alt="Türkçe Döküman"></a>
 </p>
 
@@ -31,7 +31,7 @@ Modeled after the beloved **G-Helper** philosophy, E-Helper directly interfaces 
 ## ⚡ Why E-Helper? (Advantages)
 
 1. **Dedicated to Casper Excalibur:** Tailored specifically for Casper Excalibur gaming laptop motherboards and embedded controllers.
-2. **Ultra-Low Memory Footprint:** Consumes only **~5 - 10 MB RAM** idling in the system tray and **~20 - 35 MB RAM** when the flyout is actively open.
+2. **Ultra-Low Memory Footprint:** Consumes only **~1 - 5 MB RAM** idling in the background/system tray and **~40 - 70 MB RAM** while the flyout interface is actively open on screen.
 3. **Zero Background Bloatware:** No background daemons, no telemetry trackers, no analytics agents, and no unnecessary services eating CPU cycles.
 4. **Permanent Settings Persistence:** User configurations (RGB keyboard lighting, power profile, brightness) automatically survive system restarts and shutdowns via elevated Windows Task Scheduler startup and delayed EC post-boot synchronization.
 5. **Direct Hardware Communication:** Talks directly to the motherboard Embedded Controller (EC / ACPI SMI / WMI), completely bypassing bloated OEM background processes.
@@ -54,13 +54,15 @@ Modeled after the beloved **G-Helper** philosophy, E-Helper directly interfaces 
 * **System Tray Tooltip:** Hovering over the tray icon reveals current temperatures and fan RPMs without opening the window.
 
 ### 3. RGB Keyboard Backlight Control
-* **Modes:** Static, Breathing, Colorful Dynamic Cycle, and Rainbow.
-* **Interactive Color Spectrum:** Smooth 360° hue selector with curated quick-access preset palettes.
-* **Hardware Brightness Steps:**
+* **Modes:** Static, Breathing, Colorful Dynamic Cycle, Rainbow, and **3-Zone Custom RGB Lighting**.
+* **Interactive 3-Zone Keyboard Map:** A bird's-eye 2D interactive keyboard schematic allowing individual color assignments to Left (WASD), Center, and Right (Numpad) zones.
+* **Modern Color Palette:** Built-in Windows 11 style color picker with 2D spectrum canvas, 1D hue slider, Hex code input, RGB fine-tuning, and vibrant swatches.
+* **Hardware Brightness Steps (Filled Track):**
   * `0` : **Off (0%)** — Shuts down all keyboard LED zones.
   * `1` : **50% Brightness** — Balanced ambient illumination.
   * `2` : **100% Brightness** — Full maximum brightness.
-* **Reboot Resilience:** Preserves your lighting mode, brightness, and colors even after cold boots.
+  * *Supports direct click-to-position on the slider bar.*
+* **Reboot Resilience:** Preserves your lighting mode, brightness, and zone colors even after cold boots.
 
 ### 4. Usability & System Integration
 * **Start with Windows:** Elevated logon task scheduling that silently starts E-Helper minimized to tray without triggering UAC warnings.

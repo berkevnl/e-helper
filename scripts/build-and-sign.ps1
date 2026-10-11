@@ -2,8 +2,8 @@
 # Builds clean, standalone and framework-dependent binaries with full assembly metadata and Authenticode digital signing.
 
 param(
-    [switch]$SkipSign = $true,
-    [switch]$Sign = $false,
+    [switch]$SkipSign = $false,
+    [switch]$Sign = $true,
     [string]$CertSubject = "CN=E-Helper Open Source Community"
 )
 
@@ -32,7 +32,7 @@ if (Test-Path $FrameworkDir) {
 }
 
 Write-Host "==> [1/3] Building E-Helper Standalone Single-File..." -ForegroundColor Cyan
-dotnet publish $ProjectPath -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -o $StandaloneDir
+dotnet publish $ProjectPath -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true -p:IncludeNativeLibrariesForSelfExtract=true -p:PublishReadyToRun=false -o $StandaloneDir
 
 Write-Host "==> [2/3] Building E-Helper Framework-Dependent..." -ForegroundColor Cyan
 dotnet publish $ProjectPath -c Release -r win-x64 --self-contained false -o $FrameworkDir
@@ -76,22 +76,13 @@ if ($Sign -and -not $SkipSign) {
         # Non-critical if certutil fails
     }
 
-    # Sign Standalone executable with DigiCert timestamp
-    Write-Host "==> Signing Standalone binary with timestamp..." -ForegroundColor Cyan
-    try {
-        Set-AuthenticodeSignature -FilePath $StandaloneExe -Certificate $cert -HashAlgorithm SHA256 -TimestampServer "http://timestamp.digicert.com" | Out-Null
-    } catch {
-        Write-Host "Timestamp server unavailable, signing without timestamp..." -ForegroundColor Yellow
-        Set-AuthenticodeSignature -FilePath $StandaloneExe -Certificate $cert -HashAlgorithm SHA256 | Out-Null
-    }
+    # Sign Standalone executable with SHA256 Authenticode
+    Write-Host "==> Signing Standalone binary with SHA256 Authenticode..." -ForegroundColor Cyan
+    Set-AuthenticodeSignature -FilePath $StandaloneExe -Certificate $cert -HashAlgorithm SHA256 | Out-Null
 
-    # Sign Framework-dependent executable with DigiCert timestamp
-    Write-Host "==> Signing Framework-Dependent binary with timestamp..." -ForegroundColor Cyan
-    try {
-        Set-AuthenticodeSignature -FilePath $FrameworkExe -Certificate $cert -HashAlgorithm SHA256 -TimestampServer "http://timestamp.digicert.com" | Out-Null
-    } catch {
-        Set-AuthenticodeSignature -FilePath $FrameworkExe -Certificate $cert -HashAlgorithm SHA256 | Out-Null
-    }
+    # Sign Framework-dependent executable with SHA256 Authenticode
+    Write-Host "==> Signing Framework-Dependent binary with SHA256 Authenticode..." -ForegroundColor Cyan
+    Set-AuthenticodeSignature -FilePath $FrameworkExe -Certificate $cert -HashAlgorithm SHA256 | Out-Null
 
     $sigStandalone = Get-AuthenticodeSignature -FilePath $StandaloneExe
     $sigFramework = Get-AuthenticodeSignature -FilePath $FrameworkExe
@@ -108,6 +99,7 @@ if (-not $appVersion) { $appVersion = "1.0.0" }
 $zipPath = "$StandaloneDir\E-Helper-v$appVersion-win-x64.zip"
 Write-Host "==> Creating Standalone Release ZIP: $zipPath" -ForegroundColor Cyan
 if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
+
 Compress-Archive -Path $StandaloneExe -DestinationPath $zipPath -Force
 
 Write-Host "==> Build & Digital Signing complete!" -ForegroundColor Green

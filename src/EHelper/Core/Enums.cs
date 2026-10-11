@@ -19,7 +19,8 @@ namespace EHelper.Core
         Breathing = 3,
         ColorfulCycle = 6,
         Rainbow = 7,
-        Ambilight = 7
+        Ambilight = 7,
+        TripleZone = 10
     }
 
     public enum LedZone : uint

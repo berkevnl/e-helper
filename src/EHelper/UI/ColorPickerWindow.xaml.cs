@@ -23,13 +23,17 @@ namespace EHelper.UI
 
         public event Action<byte, byte, byte>? ColorPreviewChanged;
 
-        private double _hue;         // 0.0 - 360.0
-        private double _saturation;  // 0.0 - 1.0
-        private double _value;       // 0.0 - 1.0
+        private double _hue = 0.0;          // 0.0 - 360.0
+        private double _saturation = 1.0;   // 0.0 - 1.0
+        private double _value = 1.0;        // 0.0 - 1.0
 
         private bool _isUpdating = true;
         private bool _isDraggingSv;
         private bool _isDraggingHue;
+
+        private double _lastRenderedHue = -1;
+        private byte _lastReportedR = 255, _lastReportedG = 255, _lastReportedB = 255;
+        private readonly SolidColorBrush _newColorBrush = new();
 
         public ColorPickerWindow(byte initialR, byte initialG, byte initialB)
         {
@@ -44,24 +48,26 @@ namespace EHelper.UI
             SelectedGreen = initialG;
             SelectedBlue = initialB;
 
-            if (BrdOldColor != null)
-            {
-                BrdOldColor.Background = new SolidColorBrush(Color.FromRgb(initialR, initialG, initialB));
-            }
-
             RgbToHsv(initialR, initialG, initialB, out _hue, out _saturation, out _value);
 
-            // Populate text inputs safely before wiring events
-            if (TxtHexInput != null) TxtHexInput.Text = $"#{initialR:X2}{initialG:X2}{initialB:X2}";
-            if (TxtRInput != null) TxtRInput.Text = initialR.ToString();
-            if (TxtGInput != null) TxtGInput.Text = initialG.ToString();
-            if (TxtBInput != null) TxtBInput.Text = initialB.ToString();
+            if (TxtHexInput != null)
+            {
+                TxtHexInput.Text = $"#{initialR:X2}{initialG:X2}{initialB:X2}";
+                TxtHexInput.TextChanged += TxtHexInput_TextChanged;
+            }
 
-            // Wire events after control tree is established
-            if (TxtHexInput != null) TxtHexInput.TextChanged += TxtHexInput_TextChanged;
-            if (TxtRInput != null) TxtRInput.TextChanged += TxtRgbInput_TextChanged;
-            if (TxtGInput != null) TxtGInput.TextChanged += TxtRgbInput_TextChanged;
-            if (TxtBInput != null) TxtBInput.TextChanged += TxtRgbInput_TextChanged;
+            if (TxtDialogTitle != null)
+            {
+                TxtDialogTitle.Text = Services.LocalizationManager.ColorDialogTitle;
+            }
+            if (BtnApply != null)
+            {
+                BtnApply.Content = Services.LocalizationManager.ColorOkButton;
+            }
+            if (BtnCancel != null)
+            {
+                BtnCancel.Content = Services.LocalizationManager.ColorCancelButton;
+            }
 
             Loaded += (s, e) =>
             {
@@ -100,17 +106,17 @@ namespace EHelper.UI
 
         private void SvBox_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed && GridSvBox != null)
+            if (e.LeftButton == MouseButtonState.Pressed)
             {
                 _isDraggingSv = true;
-                ((UIElement)sender).CaptureMouse();
+                Mouse.Capture(sender as IInputElement);
                 UpdateSvFromMouse(e.GetPosition(GridSvBox));
             }
         }
 
         private void SvBox_MouseMove(object sender, MouseEventArgs e)
         {
-            if (_isDraggingSv && e.LeftButton == MouseButtonState.Pressed && GridSvBox != null)
+            if (_isDraggingSv && e.LeftButton == MouseButtonState.Pressed)
             {
                 UpdateSvFromMouse(e.GetPosition(GridSvBox));
             }
@@ -121,40 +127,40 @@ namespace EHelper.UI
             if (_isDraggingSv)
             {
                 _isDraggingSv = false;
-                ((UIElement)sender).ReleaseMouseCapture();
+                Mouse.Capture(null);
             }
         }
 
-        private void UpdateSvFromMouse(Point pos)
+        private void UpdateSvFromMouse(Point p)
         {
-            if (GridSvBox == null) return;
-            double width = GridSvBox.ActualWidth;
-            double height = GridSvBox.ActualHeight;
-            if (width <= 0 || height <= 0) return;
+            if (GridSvBox == null || GridSvBox.ActualWidth <= 0 || GridSvBox.ActualHeight <= 0) return;
 
-            _saturation = Math.Clamp(pos.X / width, 0.0, 1.0);
-            _value = Math.Clamp(1.0 - (pos.Y / height), 0.0, 1.0);
+            double s = Math.Clamp(p.X / GridSvBox.ActualWidth, 0.0, 1.0);
+            double v = Math.Clamp(1.0 - (p.Y / GridSvBox.ActualHeight), 0.0, 1.0);
+
+            _saturation = s;
+            _value = v;
 
             UpdateFromHsv(updateInputs: true, updateReticle: true, updateHueThumb: false);
         }
 
         #endregion
 
-        #region Hue Bar Interaction
+        #region Vertical Hue Bar Interaction
 
         private void HueBar_MouseDown(object sender, MouseButtonEventArgs e)
         {
-            if (e.LeftButton == MouseButtonState.Pressed && GridHueBar != null)
+            if (e.LeftButton == MouseButtonState.Pressed)
             {
                 _isDraggingHue = true;
-                ((UIElement)sender).CaptureMouse();
+                Mouse.Capture(sender as IInputElement);
                 UpdateHueFromMouse(e.GetPosition(GridHueBar));
             }
         }
 
         private void HueBar_MouseMove(object sender, MouseEventArgs e)
         {
-            if (_isDraggingHue && e.LeftButton == MouseButtonState.Pressed && GridHueBar != null)
+            if (_isDraggingHue && e.LeftButton == MouseButtonState.Pressed)
             {
                 UpdateHueFromMouse(e.GetPosition(GridHueBar));
             }
@@ -165,98 +171,62 @@ namespace EHelper.UI
             if (_isDraggingHue)
             {
                 _isDraggingHue = false;
-                ((UIElement)sender).ReleaseMouseCapture();
+                Mouse.Capture(null);
             }
         }
 
-        private void UpdateHueFromMouse(Point pos)
+        private void UpdateHueFromMouse(Point p)
         {
-            if (GridHueBar == null) return;
-            double width = GridHueBar.ActualWidth;
-            if (width <= 0) return;
+            if (GridHueBar == null || GridHueBar.ActualHeight <= 0) return;
 
-            _hue = Math.Clamp((pos.X / width) * 360.0, 0.0, 359.9);
+            // Vertical gradient from top (0.0 = 0° Red) to bottom (1.0 = 360° Red)
+            double ratio = Math.Clamp(p.Y / GridHueBar.ActualHeight, 0.0, 1.0);
+            _hue = ratio * 360.0;
+            if (_hue >= 360.0) _hue = 0.0;
+
             UpdateFromHsv(updateInputs: true, updateReticle: false, updateHueThumb: true);
         }
 
         #endregion
 
-        #region Swatch Selection
+        #region Text Inputs & Swatches
+
+        private void TxtHexInput_TextChanged(object sender, TextChangedEventArgs e)
+        {
+            if (_isUpdating || TxtHexInput == null) return;
+
+            string hex = TxtHexInput.Text.Trim();
+            if (hex.StartsWith('#')) hex = hex[1..];
+
+            if (hex.Length == 6 &&
+                byte.TryParse(hex[..2], NumberStyles.HexNumber, null, out byte r) &&
+                byte.TryParse(hex[2..4], NumberStyles.HexNumber, null, out byte g) &&
+                byte.TryParse(hex[4..6], NumberStyles.HexNumber, null, out byte b))
+            {
+                RgbToHsv(r, g, b, out _hue, out _saturation, out _value);
+                UpdateFromHsv(updateInputs: false, updateReticle: true, updateHueThumb: true);
+            }
+        }
 
         private void Swatch_Click(object sender, RoutedEventArgs e)
         {
             if (sender is Button btn && btn.Tag is string hex)
             {
-                ApplyHexCode(hex);
-            }
-        }
-
-        #endregion
-
-        #region Text Input Handling
-
-        private void TxtHexInput_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_isUpdating || TxtHexInput == null) return;
-            string text = TxtHexInput.Text.Trim();
-            if (text.StartsWith("#") && (text.Length == 7))
-            {
-                ApplyHexCode(text, fromHexInput: true);
-            }
-        }
-
-        private void TxtRgbInput_TextChanged(object sender, TextChangedEventArgs e)
-        {
-            if (_isUpdating || TxtRInput == null || TxtGInput == null || TxtBInput == null) return;
-
-            if (byte.TryParse(TxtRInput.Text, out byte r) &&
-                byte.TryParse(TxtGInput.Text, out byte g) &&
-                byte.TryParse(TxtBInput.Text, out byte b))
-            {
-                SelectedRed = r;
-                SelectedGreen = g;
-                SelectedBlue = b;
-
-                RgbToHsv(r, g, b, out _hue, out _saturation, out _value);
-                UpdateFromHsv(updateInputs: false, updateReticle: true, updateHueThumb: true);
-
-                _isUpdating = true;
-                if (TxtHexInput != null) TxtHexInput.Text = $"#{r:X2}{g:X2}{b:X2}";
-                _isUpdating = false;
-            }
-        }
-
-        private void ApplyHexCode(string hex, bool fromHexInput = false)
-        {
-            string clean = hex.TrimStart('#');
-            if (clean.Length == 6 &&
-                byte.TryParse(clean[..2], NumberStyles.HexNumber, null, out byte r) &&
-                byte.TryParse(clean[2..4], NumberStyles.HexNumber, null, out byte g) &&
-                byte.TryParse(clean[4..6], NumberStyles.HexNumber, null, out byte b))
-            {
-                SelectedRed = r;
-                SelectedGreen = g;
-                SelectedBlue = b;
-
-                RgbToHsv(r, g, b, out _hue, out _saturation, out _value);
-                UpdateFromHsv(updateInputs: !fromHexInput, updateReticle: true, updateHueThumb: true);
-
-                if (!fromHexInput)
+                string cleanHex = hex.TrimStart('#');
+                if (cleanHex.Length == 6 &&
+                    byte.TryParse(cleanHex[..2], NumberStyles.HexNumber, null, out byte r) &&
+                    byte.TryParse(cleanHex[2..4], NumberStyles.HexNumber, null, out byte g) &&
+                    byte.TryParse(cleanHex[4..6], NumberStyles.HexNumber, null, out byte b))
                 {
-                    _isUpdating = true;
-                    if (TxtHexInput != null) TxtHexInput.Text = $"#{r:X2}{g:X2}{b:X2}";
-                    _isUpdating = false;
+                    RgbToHsv(r, g, b, out _hue, out _saturation, out _value);
+                    UpdateFromHsv(updateInputs: true, updateReticle: true, updateHueThumb: true);
                 }
             }
         }
 
         #endregion
 
-        #region Core HSV & Geometry Calculations
-
-        private double _lastRenderedHue = -1;
-        private byte _lastReportedR = 255, _lastReportedG = 255, _lastReportedB = 255;
-        private readonly SolidColorBrush _newColorBrush = new SolidColorBrush();
+        #region HSV Calculations
 
         private void UpdateFromHsv(bool updateInputs, bool updateReticle, bool updateHueThumb)
         {
@@ -267,7 +237,7 @@ namespace EHelper.UI
                 SelectedGreen = g;
                 SelectedBlue = b;
 
-                // 1. Update pure Hue background of 2D SV Box only if Hue actually changed
+                // 1. Update pure Hue background of 2D SV Box
                 if (StopHueColor != null && Math.Abs(_hue - _lastRenderedHue) > 0.05)
                 {
                     _lastRenderedHue = _hue;
@@ -275,7 +245,7 @@ namespace EHelper.UI
                     StopHueColor.Color = Color.FromRgb(pureR, pureG, pureB);
                 }
 
-                // 2. Update New Color Preview Box with reusable brush (0 allocations)
+                // 2. Update Color Preview Box
                 if (BrdNewColor != null)
                 {
                     _newColorBrush.Color = Color.FromRgb(r, g, b);
@@ -285,16 +255,17 @@ namespace EHelper.UI
                     }
                 }
 
-                // 3. Update Text Inputs if requested
+                // 3. Update Text Inputs and Labels
                 if (updateInputs)
                 {
                     _isUpdating = true;
                     if (TxtHexInput != null) TxtHexInput.Text = $"#{r:X2}{g:X2}{b:X2}";
-                    if (TxtRInput != null) TxtRInput.Text = r.ToString();
-                    if (TxtGInput != null) TxtGInput.Text = g.ToString();
-                    if (TxtBInput != null) TxtBInput.Text = b.ToString();
                     _isUpdating = false;
                 }
+
+                if (TxtRVal != null) TxtRVal.Text = r.ToString();
+                if (TxtGVal != null) TxtGVal.Text = g.ToString();
+                if (TxtBVal != null) TxtBVal.Text = b.ToString();
 
                 // 4. Update Reticle Indicator Position on 2D SV Box
                 if (updateReticle && GridSvBox != null && Reticle != null && GridSvBox.ActualWidth > 0 && GridSvBox.ActualHeight > 0)
@@ -305,14 +276,14 @@ namespace EHelper.UI
                     Canvas.SetTop(Reticle, Math.Clamp(y, -Reticle.Height / 2.0, GridSvBox.ActualHeight - Reticle.Height / 2.0));
                 }
 
-                // 5. Update Hue Slider Indicator Position
-                if (updateHueThumb && GridHueBar != null && HueThumb != null && GridHueBar.ActualWidth > 0)
+                // 5. Update Hue Vertical Indicator Position
+                if (updateHueThumb && GridHueBar != null && HueThumb != null && GridHueBar.ActualHeight > 0)
                 {
-                    double thumbX = (_hue / 360.0) * (GridHueBar.ActualWidth - HueThumb.Width);
-                    Canvas.SetLeft(HueThumb, Math.Clamp(thumbX, 0, GridHueBar.ActualWidth - HueThumb.Width));
+                    double thumbY = (_hue / 360.0) * (GridHueBar.ActualHeight - HueThumb.Height);
+                    Canvas.SetTop(HueThumb, Math.Clamp(thumbY, 0, GridHueBar.ActualHeight - HueThumb.Height));
                 }
 
-                // 6. Broadcast Real-time Live Preview only if RGB integer values actually changed
+                // 6. Broadcast Real-time Live Preview
                 if (r != _lastReportedR || g != _lastReportedG || b != _lastReportedB)
                 {
                     _lastReportedR = r;
@@ -323,7 +294,7 @@ namespace EHelper.UI
             }
             catch
             {
-                // Defensive guard against layout cycle interruptions
+                // Guard against transient layout interrupts
             }
         }
 

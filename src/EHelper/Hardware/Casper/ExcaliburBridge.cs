@@ -66,7 +66,7 @@ namespace EHelper.Hardware.Casper
 
                 if (attempt < 3)
                 {
-                    System.Threading.Thread.Sleep(300);
+                    System.Threading.Thread.Sleep(200);
                 }
             }
         }
@@ -97,12 +97,19 @@ namespace EHelper.Hardware.Casper
                     _wmiInstance["BufferBytes"] = inBuffer;
                     _wmiInstance.Put(); // Executes SMI interrupt on Quanta EC
 
-                    // 2. Fetch fresh output buffer from ACPI WMI
+                    // If this was a write command (LED, Fan, Power), the EC has already taken the command via SMI Put()
+                    if (smi.a0 == ExcaliburSmiHelper.CMD_WRITE)
+                    {
+                        return true;
+                    }
+
+                    // 2. Fetch fresh output buffer from ACPI WMI for read commands (Telemetry)
                     byte[]? outBuffer = null;
 
                     try
                     {
-                        using var searcher = new ManagementObjectSearcher(WmiNamespace, "SELECT BufferBytes FROM RW_GMWMI");
+                        var opts = new EnumerationOptions { ReturnImmediately = true, Timeout = TimeSpan.FromMilliseconds(500) };
+                        using var searcher = new ManagementObjectSearcher(WmiNamespace, "SELECT BufferBytes FROM RW_GMWMI", opts);
                         foreach (ManagementObject obj in searcher.Get())
                         {
                             if (obj["BufferBytes"] is byte[] fresh && fresh.Length >= size)
@@ -301,6 +308,24 @@ namespace EHelper.Hardware.Casper
             bool res5 = SetLed(LedZone.KeyboardRight, mode, brightness, r, g, b);
 
             return res0 || res6 || res3;
+        }
+
+        public bool SetKeyboardTripleZone(byte brightness, (byte r, byte g, byte b) left, (byte r, byte g, byte b) center, (byte r, byte g, byte b) right)
+        {
+            if (brightness == 0)
+            {
+                return TurnOffAllLights();
+            }
+
+            // Hardware mapping on Casper Excalibur laptops:
+            // EC SMI Zone 5 (LedZone.KeyboardRight) physically controls the left zone (WASD area).
+            // EC SMI Zone 4 (LedZone.KeyboardCenter) physically controls the center zone.
+            // EC SMI Zone 3 (LedZone.KeyboardLeft) physically controls the right zone (Numpad area).
+            bool resL = SetLed(LedZone.KeyboardRight, LedMode.Static, brightness, left.r, left.g, left.b);
+            bool resC = SetLed(LedZone.KeyboardCenter, LedMode.Static, brightness, center.r, center.g, center.b);
+            bool resR = SetLed(LedZone.KeyboardLeft, LedMode.Static, brightness, right.r, right.g, right.b);
+
+            return resL || resC || resR;
         }
 
         public bool TurnOffAllLights()

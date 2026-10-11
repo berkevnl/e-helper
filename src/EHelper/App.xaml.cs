@@ -1,4 +1,8 @@
 using System;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using EHelper.Config;
@@ -55,7 +59,46 @@ namespace EHelper
             };
 
             // Single-instance enforcement
-            _mutex = new Mutex(true, AppMutexName, out bool isNewInstance);
+            bool isNewInstance = false;
+            try
+            {
+                _mutex = new Mutex(true, AppMutexName, out isNewInstance);
+            }
+            catch (AbandonedMutexException)
+            {
+                // Prior instance terminated abnormally without releasing the mutex
+                isNewInstance = true;
+            }
+            catch
+            {
+                isNewInstance = true;
+            }
+
+            if (!isNewInstance)
+            {
+                try
+                {
+                    var current = Process.GetCurrentProcess();
+                    var others = Process.GetProcessesByName(current.ProcessName);
+                    bool hasActiveOther = false;
+                    foreach (var p in others)
+                    {
+                        if (p.Id != current.Id)
+                        {
+                            hasActiveOther = true;
+                            break;
+                        }
+                    }
+
+                    if (!hasActiveOther)
+                    {
+                        // Stale mutex with no active process, allow this instance to run
+                        isNewInstance = true;
+                    }
+                }
+                catch { }
+            }
+
             if (!isNewInstance)
             {
                 try
@@ -118,16 +161,13 @@ namespace EHelper
                         }
                     }
 
-                    // Periodically keep background memory lean if flyout window is not open
+                    // Periodically keep memory lean both in background and while UI is open
                     if (++_telemetryCounter % 10 == 0)
                     {
                         Dispatcher.InvokeAsync(() =>
                         {
-                            if (_mainWindow != null && !_mainWindow.IsVisible)
-                            {
-                                MemoryOptimizer.TrimMemory();
-                            }
-                        });
+                            MemoryOptimizer.TrimMemory();
+                        }, System.Windows.Threading.DispatcherPriority.Background);
                     }
                 };
 
@@ -195,9 +235,6 @@ namespace EHelper
                         catch { }
                     });
                 }
-
-                // Initial working set trim to drop memory to ultra-lightweight levels (~2-5 MB)
-                MemoryOptimizer.TrimMemory();
             }
             catch (Exception ex)
             {

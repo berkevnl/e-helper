@@ -39,6 +39,13 @@ namespace EHelper.Services
         public static string LedBreathing => IsTurkish ? "💨 Nefes" : "💨 Breathing";
         public static string LedDynamic => IsTurkish ? "💫 Dinamik" : "💫 Dynamic";
         public static string LedRainbow => IsTurkish ? "🌈 Gökkuşağı" : "🌈 Rainbow";
+        public static string LedTripleZone => IsTurkish ? "🎨 3-Bölge" : "🎨 3-Zone";
+        public static string ColorLabel => IsTurkish ? "Renk" : "Color";
+
+        public static string ZoneLeftLabel => IsTurkish ? "Sol Bölge" : "Left Zone";
+        public static string ZoneCenterLabel => IsTurkish ? "Orta Bölge" : "Center Zone";
+        public static string ZoneRightLabel => IsTurkish ? "Sağ Bölge" : "Right Zone";
+        public static string KeyboardDiagramTitle => IsTurkish ? "Bölge Seç ve Rengini Belirle:" : "Select Zone & Set Color:";
 
         public static string CustomColorButton => IsTurkish ? "🎨 Özel Renk Seç" : "🎨 Custom Color";
         public static string CustomColorTitle => IsTurkish ? "Özel Renk" : "Custom Color";
@@ -52,5 +59,9 @@ namespace EHelper.Services
         public static string Refresh => IsTurkish ? "🔃 Yenile" : "🔃 Refresh";
         public static string Exit => IsTurkish ? "➔ Çıkış" : "➔ Exit";
         public static string LangButton => IsTurkish ? "🌐 EN" : "🌐 TR";
+
+        public static string ColorDialogTitle => IsTurkish ? "Renk Seçimi" : "Color";
+        public static string ColorOkButton => IsTurkish ? "Tamam" : "OK";
+        public static string ColorCancelButton => IsTurkish ? "İptal" : "Cancel";
     }
 }

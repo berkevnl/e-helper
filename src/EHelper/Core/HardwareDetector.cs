@@ -20,12 +20,8 @@ namespace EHelper.Core
                 try
                 {
                     var excaliburBridge = new ExcaliburBridge(model);
-                    if (excaliburBridge.IsHardwareConnected)
-                    {
-                        Debug.WriteLine("[HardwareDetector] Casper Excalibur WMI bridge initialized successfully.");
-                        return (excaliburBridge, false);
-                    }
-                    excaliburBridge.Dispose();
+                    Debug.WriteLine($"[HardwareDetector] Casper Excalibur bridge created. IsHardwareConnected: {excaliburBridge.IsHardwareConnected}");
+                    return (excaliburBridge, false);
                 }
                 catch (Exception ex)
                 {
@@ -44,6 +40,42 @@ namespace EHelper.Core
             string modelName = "Casper Excalibur";
             bool isExcalibur = false;
 
+            // 1. Fast Registry BIOS check (0ms latency, bypasses slow WMI service spin-up)
+            try
+            {
+                using var key = Microsoft.Win32.Registry.LocalMachine.OpenSubKey(@"HARDWARE\DESCRIPTION\System\BIOS");
+                if (key != null)
+                {
+                    string mfg = key.GetValue("SystemManufacturer")?.ToString() ?? "";
+                    string model = key.GetValue("SystemProductName")?.ToString() ?? "";
+                    string family = key.GetValue("SystemFamily")?.ToString() ?? "";
+                    string bbMfg = key.GetValue("BaseBoardManufacturer")?.ToString() ?? "";
+                    string bbProduct = key.GetValue("BaseBoardProduct")?.ToString() ?? "";
+
+                    if (!string.IsNullOrWhiteSpace(mfg)) vendor = mfg;
+                    if (!string.IsNullOrWhiteSpace(model)) modelName = model;
+                    else if (!string.IsNullOrWhiteSpace(family)) modelName = family;
+
+                    if (mfg.Contains("Casper", StringComparison.OrdinalIgnoreCase) ||
+                        model.Contains("Excalibur", StringComparison.OrdinalIgnoreCase) ||
+                        family.Contains("Excalibur", StringComparison.OrdinalIgnoreCase) ||
+                        bbMfg.Contains("Casper", StringComparison.OrdinalIgnoreCase) ||
+                        bbProduct.Contains("G920", StringComparison.OrdinalIgnoreCase) ||
+                        bbProduct.Contains("G870", StringComparison.OrdinalIgnoreCase) ||
+                        bbProduct.Contains("G770", StringComparison.OrdinalIgnoreCase))
+                    {
+                        isExcalibur = true;
+                    }
+
+                    if (isExcalibur || !string.IsNullOrWhiteSpace(mfg))
+                    {
+                        return NormalizeModel(vendor, modelName, isExcalibur);
+                    }
+                }
+            }
+            catch { }
+
+            // 2. Fallback to WMI only if Registry query could not be completed
             try
             {
                 using var csSearcher = new ManagementObjectSearcher("SELECT Manufacturer, Model, SystemFamily FROM Win32_ComputerSystem");
@@ -67,26 +99,33 @@ namespace EHelper.Core
             }
             catch { }
 
-            try
+            if (!isExcalibur)
             {
-                using var bbSearcher = new ManagementObjectSearcher("SELECT Manufacturer, Product FROM Win32_BaseBoard");
-                foreach (ManagementObject obj in bbSearcher.Get())
+                try
                 {
-                    string bbProduct = obj["Product"]?.ToString() ?? "";
-                    string bbMfg = obj["Manufacturer"]?.ToString() ?? "";
-
-                    if (bbMfg.Contains("Casper", StringComparison.OrdinalIgnoreCase) ||
-                        bbProduct.Contains("G920", StringComparison.OrdinalIgnoreCase) ||
-                        bbProduct.Contains("G870", StringComparison.OrdinalIgnoreCase) ||
-                        bbProduct.Contains("G770", StringComparison.OrdinalIgnoreCase))
+                    using var bbSearcher = new ManagementObjectSearcher("SELECT Manufacturer, Product FROM Win32_BaseBoard");
+                    foreach (ManagementObject obj in bbSearcher.Get())
                     {
-                        isExcalibur = true;
+                        string bbProduct = obj["Product"]?.ToString() ?? "";
+                        string bbMfg = obj["Manufacturer"]?.ToString() ?? "";
+
+                        if (bbMfg.Contains("Casper", StringComparison.OrdinalIgnoreCase) ||
+                            bbProduct.Contains("G920", StringComparison.OrdinalIgnoreCase) ||
+                            bbProduct.Contains("G870", StringComparison.OrdinalIgnoreCase) ||
+                            bbProduct.Contains("G770", StringComparison.OrdinalIgnoreCase))
+                        {
+                            isExcalibur = true;
+                        }
                     }
                 }
+                catch { }
             }
-            catch { }
 
-            // Presentation model normalization for Casper Excalibur models
+            return NormalizeModel(vendor, modelName, isExcalibur);
+        }
+
+        private static (string Vendor, string Model, bool IsExcalibur) NormalizeModel(string vendor, string modelName, bool isExcalibur)
+        {
             if (modelName.Contains("G920", StringComparison.OrdinalIgnoreCase)) modelName = "Casper Excalibur G920";
             else if (modelName.Contains("G870", StringComparison.OrdinalIgnoreCase)) modelName = "Casper Excalibur G870";
             else if (modelName.Contains("G770", StringComparison.OrdinalIgnoreCase)) modelName = "Casper Excalibur G770";

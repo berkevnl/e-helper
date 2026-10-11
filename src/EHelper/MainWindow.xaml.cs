@@ -34,6 +34,13 @@ namespace EHelper
         private byte _red;
         private byte _green;
         private byte _blue;
+
+        // 3-Bölge RGB renkleri ve aktif seçili bölge (0: Sol, 1: Orta, 2: Sağ)
+        private byte _zoneLeftR = 0, _zoneLeftG = 229, _zoneLeftB = 255;
+        private byte _zoneCenterR = 34, _zoneCenterG = 197, _zoneCenterB = 94;
+        private byte _zoneRightR = 239, _zoneRightG = 68, _zoneRightB = 68;
+        private int _activeZoneIndex = 0;
+
         private bool _isDarkTheme;
 
         private bool _isInitialized;
@@ -62,6 +69,17 @@ namespace EHelper
             _red = s.Red;
             _green = s.Green;
             _blue = s.Blue;
+
+            _zoneLeftR = s.ZoneLeftRed;
+            _zoneLeftG = s.ZoneLeftGreen;
+            _zoneLeftB = s.ZoneLeftBlue;
+            _zoneCenterR = s.ZoneCenterRed;
+            _zoneCenterG = s.ZoneCenterGreen;
+            _zoneCenterB = s.ZoneCenterBlue;
+            _zoneRightR = s.ZoneRightRed;
+            _zoneRightG = s.ZoneRightGreen;
+            _zoneRightB = s.ZoneRightBlue;
+
             _isDarkTheme = s.IsDarkTheme;
 
             if (_currentLedMode == LedMode.Off)
@@ -92,17 +110,36 @@ namespace EHelper
             UpdateBrightnessUI();
             UpdateColorPreview();
 
-            // Synchronize Windows Startup state (Task Scheduler + Run key)
-            StartupManager.EnsureStartupSynchronized(s.StartWithWindows);
-            ChkAutoStart.IsChecked = StartupManager.IsStartupEnabled();
+            // Synchronize Windows Startup state asynchronously in background (0ms UI startup delay)
+            ChkAutoStart.IsChecked = s.StartWithWindows;
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    StartupManager.EnsureStartupSynchronized(s.StartWithWindows);
+                    bool actual = StartupManager.IsStartupEnabled();
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        ChkAutoStart.IsChecked = actual;
+                    });
+                }
+                catch { }
+            });
 
             UpdatePowerModeButtonsUI();
             UpdateLedModeButtonsUI();
 
-            // Initial push to hardware
-            _bridge.SetPowerMode(_currentPowerMode);
-            ExcaliburPowerPlan.ApplyPowerPlan(_currentPowerMode);
-            ApplyLedSettings();
+            // Initial push to hardware asynchronously in background (0ms UI startup delay)
+            System.Threading.Tasks.Task.Run(() =>
+            {
+                try
+                {
+                    _bridge.SetPowerMode(_currentPowerMode);
+                    ExcaliburPowerPlan.ApplyPowerPlan(_currentPowerMode);
+                    ApplyLedSettings();
+                }
+                catch { }
+            });
 
             // Gaming laptop EC / BIOS post-boot synchronization:
             // Laptop EC firmware and ACPI drivers often perform a reset 1-3 seconds after Windows logon.
@@ -211,6 +248,13 @@ namespace EHelper
                 Show();
                 Activate();
                 Focus();
+
+                // Optimize memory after UI layout is rendered on screen (drops RAM down to ~15-30 MB)
+                Dispatcher.InvokeAsync(async () =>
+                {
+                    await System.Threading.Tasks.Task.Delay(300);
+                    MemoryOptimizer.TrimMemory();
+                }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
             }
         }
 
@@ -292,26 +336,30 @@ namespace EHelper
 
         #region RGB Keyboard Control
 
-        private void BtnLedStatic_Click(object sender, RoutedEventArgs e)
+        private void CmbLedMode_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            SetLedMode(LedMode.Static);
+            if (!_isInitialized || CmbLedMode.SelectedItem is not ComboBoxItem item) return;
+
+            string tag = item.Tag?.ToString() ?? "Static";
+            LedMode newMode = tag switch
+            {
+                "Breathing" => LedMode.Breathing,
+                "ColorfulCycle" => LedMode.ColorfulCycle,
+                "Rainbow" => LedMode.Rainbow,
+                "TripleZone" => LedMode.TripleZone,
+                _ => LedMode.Static
+            };
+
+            SetLedMode(newMode);
         }
 
-        private void BtnLedBreathing_Click(object sender, RoutedEventArgs e)
+        private void BtnModeColorAction_Click(object sender, RoutedEventArgs e)
         {
-            SetLedMode(LedMode.Breathing);
-        }
-
-        private void BtnLedDynamic_Click(object sender, RoutedEventArgs e)
-        {
-            // Orijinal Excalibur Dinamik Işık modu (Mode 6 - Colorful Dynamic Cycle)
-            SetLedMode(LedMode.ColorfulCycle);
-        }
-
-        private void BtnLedRainbow_Click(object sender, RoutedEventArgs e)
-        {
-            // Yazılımsal yumuşak ve canlı Gökkuşağı dalgası (Linear Left-to-Right Rainbow Wave)
-            SetLedMode(LedMode.Rainbow);
+            // Only functional for Static and Breathing modes
+            if (_currentLedMode == LedMode.Static || _currentLedMode == LedMode.Breathing)
+            {
+                BtnCustomColor_Click(sender, e);
+            }
         }
 
         private void SetLedMode(LedMode mode)
@@ -331,55 +379,163 @@ namespace EHelper
             }
 
             UpdateLedModeButtonsUI();
+            UpdateTripleZoneUI();
+            UpdateColorPreview();
             ApplyLedSettings();
         }
 
         private void UpdateLedModeButtonsUI()
         {
-            var normalStyle = TryFindResource("GHelperTileStyle") as Style;
-            var activeStyle = TryFindResource("ActiveGHelperTileStyle") as Style;
-
-            if (BtnLedStatic != null && normalStyle != null && activeStyle != null)
+            // Sync ComboBox selection
+            if (CmbLedMode != null)
             {
-                BtnLedStatic.Style = _currentLedMode == LedMode.Static ? activeStyle : normalStyle;
-                BtnLedBreathing.Style = _currentLedMode == LedMode.Breathing ? activeStyle : normalStyle;
-                BtnLedDynamic.Style = _currentLedMode == LedMode.ColorfulCycle ? activeStyle : normalStyle;
-                BtnLedRainbow.Style = _currentLedMode == LedMode.Rainbow ? activeStyle : normalStyle;
+                string targetTag = _currentLedMode switch
+                {
+                    LedMode.Breathing => "Breathing",
+                    LedMode.ColorfulCycle => "ColorfulCycle",
+                    LedMode.Rainbow => "Rainbow",
+                    LedMode.TripleZone => "TripleZone",
+                    _ => "Static"
+                };
+
+                for (int i = 0; i < CmbLedMode.Items.Count; i++)
+                {
+                    if (CmbLedMode.Items[i] is ComboBoxItem item && item.Tag?.ToString() == targetTag)
+                    {
+                        if (CmbLedMode.SelectedIndex != i)
+                        {
+                            CmbLedMode.SelectedIndex = i;
+                        }
+                        break;
+                    }
+                }
             }
 
-            // Özel renk seçimi yalnızca Sabit ve Nefes modlarında geçerlidir
-            if (PnlColorSection != null)
+            // 3-Bölge diyagramı yalnızca TripleZone modunda görünür
+            if (PnlTripleZoneDiagram != null)
             {
-                bool isManualColor = _currentLedMode == LedMode.Static || _currentLedMode == LedMode.Breathing;
-                PnlColorSection.Visibility = isManualColor ? Visibility.Visible : Visibility.Collapsed;
+                PnlTripleZoneDiagram.Visibility = _currentLedMode == LedMode.TripleZone ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            // Yan Renk Butonu (BtnModeColorAction): Sabit ve Nefes modlarında etkindir; Dinamik, Gökkuşağı ve 3-Bölge modlarında devre dışı/soluk
+            if (BtnModeColorAction != null)
+            {
+                bool canColor = _currentLedMode == LedMode.Static || _currentLedMode == LedMode.Breathing;
+                BtnModeColorAction.IsEnabled = canColor;
+                BtnModeColorAction.Opacity = canColor ? 1.0 : 0.45;
+                if (BrdModeColorIndicator != null)
+                {
+                    BrdModeColorIndicator.Visibility = canColor ? Visibility.Visible : Visibility.Collapsed;
+                }
             }
         }
 
+        #region 3-Zone Keyboard Interactive Diagram Handlers
+
+        private void BtnZoneLeft_Click(object sender, RoutedEventArgs e)
+        {
+            _activeZoneIndex = 0;
+            UpdateTripleZoneUI();
+            UpdateColorPreview();
+            // Kullanıcı sol bölgeye bastığında doğrudan renk seçicisini açar
+            BtnCustomColor_Click(sender, e);
+        }
+
+        private void BtnZoneCenter_Click(object sender, RoutedEventArgs e)
+        {
+            _activeZoneIndex = 1;
+            UpdateTripleZoneUI();
+            UpdateColorPreview();
+            // Kullanıcı orta bölgeye bastığında doğrudan renk seçicisini açar
+            BtnCustomColor_Click(sender, e);
+        }
+
+        private void BtnZoneRight_Click(object sender, RoutedEventArgs e)
+        {
+            _activeZoneIndex = 2;
+            UpdateTripleZoneUI();
+            UpdateColorPreview();
+            // Kullanıcı sağ bölgeye bastığında doğrudan renk seçicisini açar
+            BtnCustomColor_Click(sender, e);
+        }
+
+        private void UpdateTripleZoneUI()
+        {
+            // Renk fırçaları
+            var leftBrush = new SolidColorBrush(Color.FromRgb(_zoneLeftR, _zoneLeftG, _zoneLeftB));
+            var centerBrush = new SolidColorBrush(Color.FromRgb(_zoneCenterR, _zoneCenterG, _zoneCenterB));
+            var rightBrush = new SolidColorBrush(Color.FromRgb(_zoneRightR, _zoneRightG, _zoneRightB));
+
+            var activeBorder = TryFindResource("ZoneTileActiveBorder") as System.Windows.Media.Brush ?? TryFindResource("TileActiveBorder") as System.Windows.Media.Brush ?? new SolidColorBrush(_isDarkTheme ? Color.FromRgb(0, 144, 255) : Color.FromRgb(0, 122, 255));
+            var normalBorder = TryFindResource("ZoneTileBorder") as System.Windows.Media.Brush ?? TryFindResource("TileBorder") as System.Windows.Media.Brush ?? new SolidColorBrush(_isDarkTheme ? Color.FromRgb(56, 56, 56) : Color.FromRgb(209, 209, 214));
+            var activeBg = TryFindResource("ZoneTileActiveBg") as System.Windows.Media.Brush ?? TryFindResource("TileActiveBg") as System.Windows.Media.Brush ?? new SolidColorBrush(_isDarkTheme ? Color.FromRgb(25, 39, 56) : Color.FromRgb(225, 239, 255));
+            var normalBg = TryFindResource("ZoneTileBg") as System.Windows.Media.Brush ?? TryFindResource("TileBg") as System.Windows.Media.Brush ?? new SolidColorBrush(_isDarkTheme ? Color.FromRgb(38, 38, 38) : Color.FromRgb(255, 255, 255));
+
+            // Zone 0: Left
+            if (BrdZoneLeft != null)
+            {
+                BrdZoneLeft.BorderBrush = _activeZoneIndex == 0 ? activeBorder : normalBorder;
+                BrdZoneLeft.BorderThickness = new Thickness(_activeZoneIndex == 0 ? 2 : 1);
+                BrdZoneLeft.Background = _activeZoneIndex == 0 ? activeBg : normalBg;
+            }
+            if (DotZoneLeft != null)
+            {
+                DotZoneLeft.Background = leftBrush;
+            }
+
+            // Zone 1: Center
+            if (BrdZoneCenter != null)
+            {
+                BrdZoneCenter.BorderBrush = _activeZoneIndex == 1 ? activeBorder : normalBorder;
+                BrdZoneCenter.BorderThickness = new Thickness(_activeZoneIndex == 1 ? 2 : 1);
+                BrdZoneCenter.Background = _activeZoneIndex == 1 ? activeBg : normalBg;
+            }
+            if (DotZoneCenter != null)
+            {
+                DotZoneCenter.Background = centerBrush;
+            }
+
+            // Zone 2: Right
+            if (BrdZoneRight != null)
+            {
+                BrdZoneRight.BorderBrush = _activeZoneIndex == 2 ? activeBorder : normalBorder;
+                BrdZoneRight.BorderThickness = new Thickness(_activeZoneIndex == 2 ? 2 : 1);
+                BrdZoneRight.Background = _activeZoneIndex == 2 ? activeBg : normalBg;
+            }
+            if (DotZoneRight != null)
+            {
+                DotZoneRight.Background = rightBrush;
+            }
+
+            if (TxtDiagramTitle != null)
+            {
+                TxtDiagramTitle.Foreground = TryFindResource("TextPrimary") as System.Windows.Media.Brush ?? new SolidColorBrush(Color.FromRgb(255, 255, 255));
+            }
+        }
+
+        #endregion
+
         private void UpdateBrightnessUI()
         {
-            string symbol;
             string text;
 
             switch (_brightness)
             {
                 case 0:
-                    symbol = "🌑";
-                    text = LocalizationManager.IsTurkish ? "Kapalı (%0)" : "Off (0%)";
+                    text = "%0";
                     break;
                 case 1:
-                    symbol = "🔅";
                     text = "%50";
                     break;
                 case 2:
                 default:
-                    symbol = "🔆";
                     text = "%100";
                     break;
             }
 
             if (TxtBrightnessIcon != null)
             {
-                TxtBrightnessIcon.Text = symbol;
+                TxtBrightnessIcon.Text = text;
                 TxtBrightnessIcon.ToolTip = text;
             }
 
@@ -401,7 +557,22 @@ namespace EHelper
 
         private void BtnCustomColor_Click(object sender, RoutedEventArgs e)
         {
-            var picker = new UI.ColorPickerWindow(_red, _green, _blue)
+            byte initR, initG, initB;
+            if (_currentLedMode == LedMode.TripleZone)
+            {
+                (initR, initG, initB) = _activeZoneIndex switch
+                {
+                    0 => (_zoneLeftR, _zoneLeftG, _zoneLeftB),
+                    1 => (_zoneCenterR, _zoneCenterG, _zoneCenterB),
+                    _ => (_zoneRightR, _zoneRightG, _zoneRightB)
+                };
+            }
+            else
+            {
+                (initR, initG, initB) = (_red, _green, _blue);
+            }
+
+            var picker = new UI.ColorPickerWindow(initR, initG, initB)
             {
                 Owner = this
             };
@@ -424,9 +595,19 @@ namespace EHelper
                                 var current = pendingColor.Value;
                                 pendingColor = null;
 
-                                if (_brightness > 0 && (_currentLedMode == LedMode.Static || _currentLedMode == LedMode.Breathing))
+                                if (_brightness > 0)
                                 {
-                                    _bridge.SetAllKeyboardLed(_currentLedMode, _brightness, current.R, current.G, current.B);
+                                    if (_currentLedMode == LedMode.Static || _currentLedMode == LedMode.Breathing)
+                                    {
+                                        _bridge.SetAllKeyboardLed(_currentLedMode, _brightness, current.R, current.G, current.B);
+                                    }
+                                    else if (_currentLedMode == LedMode.TripleZone)
+                                    {
+                                        var left = _activeZoneIndex == 0 ? current : (_zoneLeftR, _zoneLeftG, _zoneLeftB);
+                                        var center = _activeZoneIndex == 1 ? current : (_zoneCenterR, _zoneCenterG, _zoneCenterB);
+                                        var right = _activeZoneIndex == 2 ? current : (_zoneRightR, _zoneRightG, _zoneRightB);
+                                        _bridge.SetKeyboardTripleZone(_brightness, left, center, right);
+                                    }
                                 }
 
                                 // Donanım veri yolunu (EC SMI) tıkamamak için kısa bekleme
@@ -480,9 +661,29 @@ namespace EHelper
 
         private void SetRgbColor(byte r, byte g, byte b)
         {
-            _red = r;
-            _green = g;
-            _blue = b;
+            if (_currentLedMode == LedMode.TripleZone)
+            {
+                switch (_activeZoneIndex)
+                {
+                    case 0:
+                        _zoneLeftR = r; _zoneLeftG = g; _zoneLeftB = b;
+                        break;
+                    case 1:
+                        _zoneCenterR = r; _zoneCenterG = g; _zoneCenterB = b;
+                        break;
+                    case 2:
+                    default:
+                        _zoneRightR = r; _zoneRightG = g; _zoneRightB = b;
+                        break;
+                }
+                UpdateTripleZoneUI();
+            }
+            else
+            {
+                _red = r;
+                _green = g;
+                _blue = b;
+            }
 
             UpdateColorPreview();
             ApplyLedSettings();
@@ -490,13 +691,24 @@ namespace EHelper
 
         private void UpdateColorPreview()
         {
-            if (BrdActiveColorPreview != null)
+            byte dispR, dispG, dispB;
+            if (_currentLedMode == LedMode.TripleZone)
             {
-                BrdActiveColorPreview.Background = new SolidColorBrush(Color.FromRgb(_red, _green, _blue));
+                (dispR, dispG, dispB) = _activeZoneIndex switch
+                {
+                    0 => (_zoneLeftR, _zoneLeftG, _zoneLeftB),
+                    1 => (_zoneCenterR, _zoneCenterG, _zoneCenterB),
+                    _ => (_zoneRightR, _zoneRightG, _zoneRightB)
+                };
             }
-            if (TxtActiveHex != null)
+            else
             {
-                TxtActiveHex.Text = $"#{_red:X2}{_green:X2}{_blue:X2}";
+                (dispR, dispG, dispB) = (_red, _green, _blue);
+            }
+
+            if (BrdModeColorIndicator != null)
+            {
+                BrdModeColorIndicator.Background = new SolidColorBrush(Color.FromRgb(dispR, dispG, dispB));
             }
         }
 
@@ -510,10 +722,21 @@ namespace EHelper
             }
             else
             {
-                // Hardware EC brightness levels:
-                // Level 1 => 50% Brightness
-                // Level 2 => 100% Brightness
-                _bridge.SetAllKeyboardLed(_currentLedMode, _brightness, _red, _green, _blue);
+                if (_currentLedMode == LedMode.TripleZone)
+                {
+                    _bridge.SetKeyboardTripleZone(
+                        _brightness,
+                        (_zoneLeftR, _zoneLeftG, _zoneLeftB),
+                        (_zoneCenterR, _zoneCenterG, _zoneCenterB),
+                        (_zoneRightR, _zoneRightG, _zoneRightB));
+                }
+                else
+                {
+                    // Hardware EC brightness levels:
+                    // Level 1 => 50% Brightness
+                    // Level 2 => 100% Brightness
+                    _bridge.SetAllKeyboardLed(_currentLedMode, _brightness, _red, _green, _blue);
+                }
             }
 
             _config.CurrentSettings.LedMode = _currentLedMode;
@@ -521,6 +744,17 @@ namespace EHelper
             _config.CurrentSettings.Red = _red;
             _config.CurrentSettings.Green = _green;
             _config.CurrentSettings.Blue = _blue;
+
+            _config.CurrentSettings.ZoneLeftRed = _zoneLeftR;
+            _config.CurrentSettings.ZoneLeftGreen = _zoneLeftG;
+            _config.CurrentSettings.ZoneLeftBlue = _zoneLeftB;
+            _config.CurrentSettings.ZoneCenterRed = _zoneCenterR;
+            _config.CurrentSettings.ZoneCenterGreen = _zoneCenterG;
+            _config.CurrentSettings.ZoneCenterBlue = _zoneCenterB;
+            _config.CurrentSettings.ZoneRightRed = _zoneRightR;
+            _config.CurrentSettings.ZoneRightGreen = _zoneRightG;
+            _config.CurrentSettings.ZoneRightBlue = _zoneRightB;
+
             _config.SaveSettings();
         }
 
@@ -551,6 +785,12 @@ namespace EHelper
                 Resources["TextSecondary"] = new SolidColorBrush(Color.FromRgb(204, 204, 204));// #CCCCCC
                 Resources["TextMuted"] = new SolidColorBrush(Color.FromRgb(142, 142, 147));    // #8E8E93
                 Resources["ProgressTrack"] = new SolidColorBrush(Color.FromRgb(42, 42, 42));   // #2A2A2A
+                Resources["AccentBlue"] = new SolidColorBrush(Color.FromRgb(0, 144, 255));     // #0090FF
+                Resources["DiagramBg"] = new SolidColorBrush(Color.FromRgb(28, 28, 28));       // #1C1C1C
+                Resources["ZoneTileBg"] = new SolidColorBrush(Color.FromRgb(38, 38, 38));      // #262626
+                Resources["ZoneTileActiveBg"] = new SolidColorBrush(Color.FromRgb(25, 39, 56));// #192738
+                Resources["ZoneTileBorder"] = new SolidColorBrush(Color.FromRgb(56, 56, 56));
+                Resources["ZoneTileActiveBorder"] = new SolidColorBrush(Color.FromRgb(0, 144, 255));
                 if (BtnThemeToggle != null) BtnThemeToggle.Content = LocalizationManager.ThemeLight;
             }
             else
@@ -566,8 +806,16 @@ namespace EHelper
                 Resources["TextSecondary"] = new SolidColorBrush(Color.FromRgb(60, 60, 67));   // #3C3C43
                 Resources["TextMuted"] = new SolidColorBrush(Color.FromRgb(142, 142, 147));    // #8E8E93
                 Resources["ProgressTrack"] = new SolidColorBrush(Color.FromRgb(229, 229, 234));
+                Resources["AccentBlue"] = new SolidColorBrush(Color.FromRgb(0, 122, 255));     // #007AFF
+                Resources["DiagramBg"] = new SolidColorBrush(Color.FromRgb(240, 240, 244));     // #F0F0F4
+                Resources["ZoneTileBg"] = new SolidColorBrush(Color.FromRgb(255, 255, 255));   // #FFFFFF
+                Resources["ZoneTileActiveBg"] = new SolidColorBrush(Color.FromRgb(225, 239, 255)); // #E1EFFF
+                Resources["ZoneTileBorder"] = new SolidColorBrush(Color.FromRgb(209, 209, 214));
+                Resources["ZoneTileActiveBorder"] = new SolidColorBrush(Color.FromRgb(0, 122, 255));
                 if (BtnThemeToggle != null) BtnThemeToggle.Content = LocalizationManager.ThemeDark;
             }
+
+            UpdateTripleZoneUI();
         }
 
         #endregion
@@ -605,14 +853,40 @@ namespace EHelper
             if (LblBrightnessHeader != null) LblBrightnessHeader.Text = LocalizationManager.BrightnessLabel;
             if (LblBrightnessTitle != null) LblBrightnessTitle.Text = LocalizationManager.BrightnessSliderTitle;
 
-            if (BtnLedStatic != null) BtnLedStatic.Content = LocalizationManager.LedStatic;
-            if (BtnLedBreathing != null) BtnLedBreathing.Content = LocalizationManager.LedBreathing;
-            if (BtnLedDynamic != null) BtnLedDynamic.Content = LocalizationManager.LedDynamic;
-            if (BtnLedRainbow != null) BtnLedRainbow.Content = LocalizationManager.LedRainbow;
+            if (CmbLedMode != null)
+            {
+                foreach (var item in CmbLedMode.Items)
+                {
+                    if (item is ComboBoxItem cbItem && cbItem.Tag is string tag)
+                    {
+                        cbItem.Content = tag switch
+                        {
+                            "Breathing" => LocalizationManager.LedBreathing,
+                            "ColorfulCycle" => LocalizationManager.LedDynamic,
+                            "Rainbow" => LocalizationManager.LedRainbow,
+                            "TripleZone" => LocalizationManager.LedTripleZone,
+                            _ => LocalizationManager.LedStatic
+                        };
+                    }
+                }
+            }
 
-            if (BtnCustomColor != null) BtnCustomColor.Content = LocalizationManager.CustomColorButton;
-            if (TxtCustomColorTitle != null) TxtCustomColorTitle.Text = LocalizationManager.CustomColorTitle;
-            if (TxtPresetsTitle != null) TxtPresetsTitle.Text = LocalizationManager.PresetsTitle;
+            if (TxtModeColorActionLabel != null) TxtModeColorActionLabel.Text = LocalizationManager.ColorLabel;
+
+            if (TxtDiagramTitle != null) TxtDiagramTitle.Text = LocalizationManager.KeyboardDiagramTitle;
+            if (LblZoneLeft != null)
+            {
+                LblZoneLeft.Text = LocalizationManager.IsTurkish ? "Sol" : "Left";
+            }
+            if (LblZoneCenter != null)
+            {
+                LblZoneCenter.Text = LocalizationManager.IsTurkish ? "Orta" : "Center";
+            }
+            if (LblZoneRight != null)
+            {
+                LblZoneRight.Text = LocalizationManager.IsTurkish ? "Sağ" : "Right";
+            }
+            UpdateTripleZoneUI();
 
             if (ChkAutoStart != null) ChkAutoStart.Content = LocalizationManager.AutoStart;
             if (BtnCheckUpdates != null) BtnCheckUpdates.Content = LocalizationManager.CheckUpdates;
