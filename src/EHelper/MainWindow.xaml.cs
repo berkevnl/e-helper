@@ -44,6 +44,8 @@ namespace EHelper
         private bool _isDarkTheme;
 
         private bool _isInitialized;
+        private UpdateCheckResult? _latestUpdateResult;
+        private bool _isUpdating;
 
         public MainWindow(IHardwareProvider bridge, bool isSimulated, ConfigManager config, HardwareMonitorService monitor)
         {
@@ -58,6 +60,7 @@ namespace EHelper
             ApplyInitialState();
             _isInitialized = true;
             SubscribeTelemetry();
+            TriggerBackgroundUpdateCheck();
         }
 
         private void ApplyInitialState()
@@ -101,10 +104,6 @@ namespace EHelper
 
             // UI Initial Values
             TxtModelBadge.Text = _bridge.DeviceModel;
-            if (TxtVersionInfo != null)
-            {
-                TxtVersionInfo.Text = $"v{UpdateService.CurrentVersion}";
-            }
 
             SliderBrightness.Value = _brightness;
             UpdateBrightnessUI();
@@ -889,9 +888,6 @@ namespace EHelper
             UpdateTripleZoneUI();
 
             if (ChkAutoStart != null) ChkAutoStart.Content = LocalizationManager.AutoStart;
-            if (BtnCheckUpdates != null) BtnCheckUpdates.Content = LocalizationManager.CheckUpdates;
-
-            if (BtnRefreshTelemetry != null) BtnRefreshTelemetry.Content = LocalizationManager.Refresh;
             if (BtnExitApp != null) BtnExitApp.Content = LocalizationManager.Exit;
             if (BtnLangToggle != null) BtnLangToggle.Content = LocalizationManager.LangButton;
 
@@ -901,18 +897,72 @@ namespace EHelper
             }
 
             UpdateBrightnessUI();
+            UpdateUpdateStatusUI();
         }
 
-        private async void BtnCheckUpdates_Click(object sender, RoutedEventArgs e)
+        private void TriggerBackgroundUpdateCheck()
         {
-            if (BtnCheckUpdates != null) BtnCheckUpdates.IsEnabled = false;
-            try
+            System.Threading.Tasks.Task.Run(async () =>
             {
-                await UpdateService.CheckForUpdatesAsync(LocalizationManager.IsTurkish == false, this);
+                var result = await UpdateService.CheckUpdateSilentAsync();
+                await Dispatcher.InvokeAsync(() =>
+                {
+                    _latestUpdateResult = result;
+                    UpdateUpdateStatusUI();
+                });
+            });
+        }
+
+        private void UpdateUpdateStatusUI()
+        {
+            if (RunUpdateStatus == null || TxtUpdateStatus == null) return;
+
+            if (_isUpdating)
+            {
+                RunUpdateStatus.Text = LocalizationManager.UpdatingStatus;
+                TxtUpdateStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 158, 11)); // Amber
+                return;
             }
-            finally
+
+            if (_latestUpdateResult != null && _latestUpdateResult.HasUpdate)
             {
-                if (BtnCheckUpdates != null) BtnCheckUpdates.IsEnabled = true;
+                // Update available: Red text e.g. "İndir: 0.283.0 → 0.285"
+                string prefix = LocalizationManager.DownloadPrefix;
+                RunUpdateStatus.Text = $"{prefix}{_latestUpdateResult.CurrentVersion} → {_latestUpdateResult.LatestVersion}";
+                TxtUpdateStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(239, 68, 68)); // Red #EF4444
+            }
+            else
+            {
+                // Up to date: Muted gray text e.g. "Sürüm: 1.1.0"
+                string version = _latestUpdateResult?.CurrentVersion ?? UpdateService.CurrentVersion;
+                string prefix = LocalizationManager.VersionPrefix;
+                RunUpdateStatus.Text = $"{prefix}{version}";
+                TxtUpdateStatus.SetResourceReference(TextBlock.ForegroundProperty, "TextMuted");
+            }
+        }
+
+        private async void TxtUpdateStatus_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        {
+            if (_isUpdating) return;
+
+            if (_latestUpdateResult != null && _latestUpdateResult.HasUpdate && !string.IsNullOrEmpty(_latestUpdateResult.DownloadUrl))
+            {
+                _isUpdating = true;
+                UpdateUpdateStatusUI();
+
+                bool success = await UpdateService.DownloadAndRestartAsync(_latestUpdateResult.DownloadUrl);
+                if (!success)
+                {
+                    _isUpdating = false;
+                    UpdateUpdateStatusUI();
+                    // Fallback to browser or dialog if silent update failed
+                    await UpdateService.CheckForUpdatesAsync(LocalizationManager.IsTurkish == false, this);
+                }
+            }
+            else
+            {
+                // Up-to-date or manual refresh check
+                await UpdateService.CheckForUpdatesAsync(LocalizationManager.IsTurkish == false, this);
             }
         }
 

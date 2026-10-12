@@ -63,5 +63,9 @@ namespace EHelper.Services
         public static string ColorDialogTitle => IsTurkish ? "Renk Seçimi" : "Color";
         public static string ColorOkButton => IsTurkish ? "Tamam" : "OK";
         public static string ColorCancelButton => IsTurkish ? "İptal" : "Cancel";
+
+        public static string VersionPrefix => IsTurkish ? "Sürüm: " : "Version: ";
+        public static string DownloadPrefix => IsTurkish ? "İndir: " : "Download: ";
+        public static string UpdatingStatus => IsTurkish ? "Güncelleniyor..." : "Updating...";
     }
 }

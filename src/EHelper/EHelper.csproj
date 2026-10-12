@@ -21,9 +21,9 @@
     <RepositoryUrl>https://github.com/berkevnl/E-Helper</RepositoryUrl>
     <PackageProjectUrl>https://github.com/berkevnl/E-Helper</PackageProjectUrl>
     <Description>Lightweight open-source hardware control tool for Casper Excalibur laptops</Description>
-    <Version>1.1.0</Version>
-    <AssemblyVersion>1.1.0.0</AssemblyVersion>
-    <FileVersion>1.1.0.0</FileVersion>
+    <Version>1.1.1</Version>
+    <AssemblyVersion>1.1.1.0</AssemblyVersion>
+    <FileVersion>1.1.1.0</FileVersion>
 
     <!-- Single-File Portable Publish Settings (Self-contained with WPF native Direct3D support) -->
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>

@@ -633,38 +633,20 @@
                 <!-- 7: Footer Action Area -->
                 <Grid Grid.Row="7">
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/> <!-- Top row: Version info on left, Theme & Lang side-by-side on right -->
-                        <RowDefinition Height="Auto"/> <!-- Bottom row: Updates, Refresh, Exit -->
+                        <RowDefinition Height="Auto"/> <!-- Top row: Version / Update link -->
+                        <RowDefinition Height="Auto"/> <!-- Bottom row: Theme, Lang, Exit buttons -->
                     </Grid.RowDefinitions>
 
-                    <!-- Top Sub-Row: Version on left, Theme & Language toggles on right -->
-                    <Grid Grid.Row="0" Margin="0,0,0,6">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="6"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="6"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Version Info: Small and legible directly above Updates button -->
-                        <TextBlock x:Name="TxtVersionInfo" Grid.Column="0" Text="v1.0.1" FontSize="10" FontWeight="SemiBold" 
-                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center" Margin="2,0,0,0"/>
-
-                        <!-- Side-by-side Theme and Language toggles directly above Exit button -->
-                        <Grid Grid.Column="4">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="*"/>
-                                <ColumnDefinition Width="4"/>
-                                <ColumnDefinition Width="*"/>
-                            </Grid.ColumnDefinitions>
-
-                            <Button x:Name="BtnThemeToggle" Grid.Column="0" Content="☀️ Açık" Style="{StaticResource FooterMiniBtnStyle}" Click="BtnThemeToggle_Click"/>
-                            <Button x:Name="BtnLangToggle" Grid.Column="2" Content="🌐 EN" Style="{StaticResource FooterMiniBtnStyle}" ToolTip="Dili Değiştir / Change Language" Click="BtnLangToggle_Click"/>
-                        </Grid>
+                    <!-- Top Sub-Row: Sürüm / Güncelleme linki (eski v1.1.0 yerinde) -->
+                    <Grid Grid.Row="0" Margin="2,0,0,6">
+                        <TextBlock x:Name="TxtUpdateStatus" FontSize="11" Cursor="Hand"
+                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
+                                   MouseLeftButtonDown="TxtUpdateStatus_Click">
+                            <Underline><Run x:Name="RunUpdateStatus" Text="Sürüm: 1.1.1"/></Underline>
+                        </TextBlock>
                     </Grid>
 
-                    <!-- Bottom Sub-Row: Updates, Refresh, Exit -->
+                    <!-- Bottom Sub-Row: AÇIK/KOYU Tema, DİL ve ÇIKIŞ Butonları (Boyut ve hizalamaları aynı) -->
                     <Grid Grid.Row="1">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
@@ -674,13 +656,13 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Updates button -->
-                        <Button x:Name="BtnCheckUpdates" Grid.Column="0" Content="📥 Güncellemeler" Style="{StaticResource FooterBtnStyle}" Click="BtnCheckUpdates_Click"/>
+                        <!-- Tema butonu (Açık/Koyu) -->
+                        <Button x:Name="BtnThemeToggle" Grid.Column="0" Content="☀️ Açık" Style="{StaticResource FooterBtnStyle}" Click="BtnThemeToggle_Click"/>
 
-                        <!-- Refresh button -->
-                        <Button x:Name="BtnRefreshTelemetry" Grid.Column="2" Content="🔃 Yenile" Style="{StaticResource FooterBtnStyle}" Click="BtnRefreshTelemetry_Click"/>
+                        <!-- Dil butonu (TR/EN) -->
+                        <Button x:Name="BtnLangToggle" Grid.Column="2" Content="🌐 EN" Style="{StaticResource FooterBtnStyle}" ToolTip="Dili Değiştir / Change Language" Click="BtnLangToggle_Click"/>
 
-                        <!-- Exit button -->
+                        <!-- Çıkış butonu -->
                         <Button x:Name="BtnExitApp" Grid.Column="4" Content="➔ Çıkış" Style="{StaticResource FooterBtnStyle}" Click="BtnExitApp_Click"/>
                     </Grid>
                 </Grid>
