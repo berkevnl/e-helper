@@ -5,6 +5,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
+using System.Windows.Media.Animation;
 using EHelper.Config;
 using EHelper.Core;
 using EHelper.Hardware.Casper;
@@ -42,6 +43,9 @@ namespace EHelper
         private int _activeZoneIndex = 0;
 
         private bool _isDarkTheme;
+
+        private System.Threading.CancellationTokenSource? _animCts;
+        private int _cycleSpeed = 0;
 
         private bool _isInitialized;
         private UpdateCheckResult? _latestUpdateResult;
@@ -107,6 +111,14 @@ namespace EHelper
 
             SliderBrightness.Value = _brightness;
             UpdateBrightnessUI();
+
+            _cycleSpeed = Math.Clamp(s.CycleSpeed, 0, 2);
+            if (SliderCycleSpeed != null)
+            {
+                SliderCycleSpeed.Value = _cycleSpeed;
+            }
+            UpdateCycleSpeedUI();
+
             UpdateColorPreview();
 
             // Synchronize Windows Startup state asynchronously in background (0ms UI startup delay)
@@ -237,8 +249,24 @@ namespace EHelper
         {
             if (IsVisible)
             {
-                Hide();
-                MemoryOptimizer.TrimMemory();
+                if (RootCard != null)
+                {
+                    var anim = new DoubleAnimation(0, TimeSpan.FromMilliseconds(120))
+                    {
+                        EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
+                    };
+                    anim.Completed += (s, e) =>
+                    {
+                        Hide();
+                        MemoryOptimizer.TrimMemory();
+                    };
+                    RootCard.BeginAnimation(UIElement.OpacityProperty, anim);
+                }
+                else
+                {
+                    Hide();
+                    MemoryOptimizer.TrimMemory();
+                }
             }
             else
             {
@@ -247,6 +275,24 @@ namespace EHelper
                 Show();
                 Activate();
                 Focus();
+
+                // Soft smooth fade & slide-in from bottom
+                if (RootCard != null)
+                {
+                    var fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180))
+                    {
+                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                    };
+                    RootCard.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
+                }
+                if (RootTranslate != null)
+                {
+                    var slideAnim = new DoubleAnimation(8, 0, TimeSpan.FromMilliseconds(180))
+                    {
+                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
+                    };
+                    RootTranslate.BeginAnimation(TranslateTransform.YProperty, slideAnim);
+                }
 
                 // Optimize memory after UI layout is rendered on screen (drops RAM down to ~15-30 MB)
                 Dispatcher.InvokeAsync(async () =>
@@ -259,6 +305,7 @@ namespace EHelper
 
         protected override void OnClosed(EventArgs e)
         {
+            StopActiveAnimation();
             base.OnClosed(e);
         }
 
@@ -344,6 +391,7 @@ namespace EHelper
             {
                 "Breathing" => LedMode.Breathing,
                 "ColorfulCycle" => LedMode.ColorfulCycle,
+                "Cycle" => LedMode.Cycle,
                 "Rainbow" => LedMode.Rainbow,
                 "TripleZone" => LedMode.TripleZone,
                 _ => LedMode.Static
@@ -392,6 +440,7 @@ namespace EHelper
                 {
                     LedMode.Breathing => "Breathing",
                     LedMode.ColorfulCycle => "ColorfulCycle",
+                    LedMode.Cycle => "Cycle",
                     LedMode.Rainbow => "Rainbow",
                     LedMode.TripleZone => "TripleZone",
                     _ => "Static"
@@ -414,6 +463,17 @@ namespace EHelper
             if (PnlTripleZoneDiagram != null)
             {
                 PnlTripleZoneDiagram.Visibility = _currentLedMode == LedMode.TripleZone ? Visibility.Visible : Visibility.Collapsed;
+            }
+
+            // Hız ayar barı yalnızca Döngü (Cycle) ve Gökkuşağı (Rainbow) modlarında görünür
+            bool hasSpeed = _currentLedMode == LedMode.Cycle || _currentLedMode == LedMode.Rainbow;
+            if (PnlCycleSpeed != null)
+            {
+                PnlCycleSpeed.Visibility = hasSpeed ? Visibility.Visible : Visibility.Collapsed;
+            }
+            if (TxtSpeedHeader != null)
+            {
+                TxtSpeedHeader.Visibility = hasSpeed ? Visibility.Visible : Visibility.Collapsed;
             }
 
             // Yan Renk Butonu (BtnModeColorAction): Sabit ve Nefes modlarında etkindir; Dinamik, Gökkuşağı ve 3-Bölge modlarında devre dışı/soluk
@@ -552,6 +612,40 @@ namespace EHelper
             _brightness = val;
             UpdateBrightnessUI();
             ApplyLedSettings();
+        }
+
+        private void SliderCycleSpeed_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            if (!_isInitialized || SliderCycleSpeed == null) return;
+            int val = (int)Math.Clamp(Math.Round(SliderCycleSpeed.Value), 0, 2);
+
+            _cycleSpeed = val;
+            UpdateCycleSpeedUI();
+
+            if (_config != null)
+            {
+                _config.CurrentSettings.CycleSpeed = _cycleSpeed;
+                _config.SaveSettings();
+            }
+        }
+
+        private void UpdateCycleSpeedUI()
+        {
+            string text = _cycleSpeed switch
+            {
+                1 => LocalizationManager.SpeedMedium,
+                2 => LocalizationManager.SpeedFast,
+                _ => LocalizationManager.SpeedSlow
+            };
+
+            if (TxtSpeedHeader != null)
+            {
+                TxtSpeedHeader.Text = $" - {text}";
+            }
+            if (SliderCycleSpeed != null)
+            {
+                SliderCycleSpeed.ToolTip = $"{LocalizationManager.CycleSpeedTitle}: {text}";
+            }
         }
 
         private void BtnCustomColor_Click(object sender, RoutedEventArgs e)
@@ -717,24 +811,33 @@ namespace EHelper
 
             if (_brightness == 0)
             {
+                StopActiveAnimation();
                 _bridge.TurnOffAllLights();
             }
             else
             {
-                if (_currentLedMode == LedMode.TripleZone)
+                if (_currentLedMode == LedMode.Cycle || _currentLedMode == LedMode.Rainbow)
                 {
-                    _bridge.SetKeyboardTripleZone(
-                        _brightness,
-                        (_zoneLeftR, _zoneLeftG, _zoneLeftB),
-                        (_zoneCenterR, _zoneCenterG, _zoneCenterB),
-                        (_zoneRightR, _zoneRightG, _zoneRightB));
+                    StartActiveAnimation();
                 }
                 else
                 {
-                    // Hardware EC brightness levels:
-                    // Level 1 => 50% Brightness
-                    // Level 2 => 100% Brightness
-                    _bridge.SetAllKeyboardLed(_currentLedMode, _brightness, _red, _green, _blue);
+                    StopActiveAnimation();
+                    if (_currentLedMode == LedMode.TripleZone)
+                    {
+                        _bridge.SetKeyboardTripleZone(
+                            _brightness,
+                            (_zoneLeftR, _zoneLeftG, _zoneLeftB),
+                            (_zoneCenterR, _zoneCenterG, _zoneCenterB),
+                            (_zoneRightR, _zoneRightG, _zoneRightB));
+                    }
+                    else
+                    {
+                        // Hardware EC brightness levels:
+                        // Level 1 => 50% Brightness
+                        // Level 2 => 100% Brightness
+                        _bridge.SetAllKeyboardLed(_currentLedMode, _brightness, _red, _green, _blue);
+                    }
                 }
             }
 
@@ -755,6 +858,120 @@ namespace EHelper
             _config.CurrentSettings.ZoneRightBlue = _zoneRightB;
 
             _config.SaveSettings();
+        }
+
+        private void StartActiveAnimation()
+        {
+            StopActiveAnimation();
+
+            if (_brightness == 0 || (_currentLedMode != LedMode.Cycle && _currentLedMode != LedMode.Rainbow))
+            {
+                return;
+            }
+
+            var cts = new System.Threading.CancellationTokenSource();
+            _animCts = cts;
+
+            System.Threading.Tasks.Task.Run(async () =>
+            {
+                double phase = 0;
+                while (!cts.Token.IsCancellationRequested)
+                {
+                    try
+                    {
+                        if (_brightness == 0)
+                        {
+                            break;
+                        }
+
+                        if (_currentLedMode == LedMode.Cycle)
+                        {
+                            // Ultra-smooth synchronized single-color spectrum flow across all keys (70 FPS, direct 3-zone write)
+                            var (r, g, b) = HsvToRgb(phase, 1.0, 1.0);
+                            _bridge.SetKeyboardTripleZone(_brightness, (r, g, b), (r, g, b), (r, g, b));
+
+                            // Speed: 0 -> Yavaş (~0.5 deg / 14ms = ~10.0s full loop)
+                            //        1 -> Orta (~2.1 deg / 14ms = ~2.4s full loop - previous Fast)
+                            //        2 -> Hızlı (~7.0 deg / 14ms = ~0.72s full loop - extra fast!)
+                            double step = _cycleSpeed switch
+                            {
+                                1 => 2.1,
+                                2 => 7.0,
+                                _ => 0.5
+                            };
+                            phase = (phase + step) % 360.0;
+                        }
+                        else if (_currentLedMode == LedMode.Rainbow)
+                        {
+                            // Ultra-smooth flowing 3-zone rainbow wave from Left to Right (Left leads, Center, Right follows)
+                            var left = HsvToRgb((phase + 100.0) % 360.0, 1.0, 1.0);
+                            var center = HsvToRgb((phase + 50.0) % 360.0, 1.0, 1.0);
+                            var right = HsvToRgb(phase, 1.0, 1.0);
+                            _bridge.SetKeyboardTripleZone(_brightness, left, center, right);
+
+                            // Speed: 0 -> Yavaş (~0.5 deg / 14ms = ~10.0s)
+                            //        1 -> Orta (~2.1 deg / 14ms = ~2.4s - previous Fast)
+                            //        2 -> Hızlı (~7.0 deg / 14ms = ~0.72s - extra fast!)
+                            double step = _cycleSpeed switch
+                            {
+                                1 => 2.1,
+                                2 => 7.0,
+                                _ => 0.5
+                            };
+                            phase = (phase + step) % 360.0;
+                        }
+                        else
+                        {
+                            break;
+                        }
+
+                        await System.Threading.Tasks.Task.Delay(14, cts.Token);
+                    }
+                    catch (System.OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch
+                    {
+                        // Ignore transient SMI/EC errors
+                    }
+                }
+            }, cts.Token);
+        }
+
+        private void StopActiveAnimation()
+        {
+            if (_animCts != null)
+            {
+                try
+                {
+                    _animCts.Cancel();
+                    _animCts.Dispose();
+                }
+                catch { }
+                _animCts = null;
+            }
+        }
+
+        private static (byte r, byte g, byte b) HsvToRgb(double hue, double saturation, double value)
+        {
+            int hi = (int)(Math.Floor(hue / 60.0)) % 6;
+            double f = hue / 60.0 - Math.Floor(hue / 60.0);
+            double v = value * 255.0;
+            byte vByte = (byte)Math.Clamp(v, 0, 255);
+            byte p = (byte)Math.Clamp(v * (1.0 - saturation), 0, 255);
+            byte q = (byte)Math.Clamp(v * (1.0 - f * saturation), 0, 255);
+            byte t = (byte)Math.Clamp(v * (1.0 - (1.0 - f) * saturation), 0, 255);
+
+            return hi switch
+            {
+                0 => (vByte, t, p),
+                1 => (q, vByte, p),
+                2 => (p, vByte, t),
+                3 => (p, q, vByte),
+                4 => (t, p, vByte),
+                _ => (vByte, p, q)
+            };
         }
 
         #endregion
@@ -790,7 +1007,8 @@ namespace EHelper
                 Resources["ZoneTileActiveBg"] = new SolidColorBrush(Color.FromRgb(25, 39, 56));// #192738
                 Resources["ZoneTileBorder"] = new SolidColorBrush(Color.FromRgb(56, 56, 56));
                 Resources["ZoneTileActiveBorder"] = new SolidColorBrush(Color.FromRgb(0, 144, 255));
-                if (BtnThemeToggle != null) BtnThemeToggle.Content = LocalizationManager.ThemeLight;
+                if (TxtThemeToggleLabel != null) TxtThemeToggleLabel.Text = LocalizationManager.ThemeLight;
+                if (IconThemePath != null) IconThemePath.Data = (Geometry)FindResource("IconSun");
             }
             else
             {
@@ -811,7 +1029,8 @@ namespace EHelper
                 Resources["ZoneTileActiveBg"] = new SolidColorBrush(Color.FromRgb(225, 239, 255)); // #E1EFFF
                 Resources["ZoneTileBorder"] = new SolidColorBrush(Color.FromRgb(209, 209, 214));
                 Resources["ZoneTileActiveBorder"] = new SolidColorBrush(Color.FromRgb(0, 122, 255));
-                if (BtnThemeToggle != null) BtnThemeToggle.Content = LocalizationManager.ThemeDark;
+                if (TxtThemeToggleLabel != null) TxtThemeToggleLabel.Text = LocalizationManager.ThemeDark;
+                if (IconThemePath != null) IconThemePath.Data = (Geometry)FindResource("IconMoon");
             }
 
             UpdateTripleZoneUI();
@@ -852,23 +1071,12 @@ namespace EHelper
             if (LblBrightnessHeader != null) LblBrightnessHeader.Text = LocalizationManager.BrightnessLabel;
             if (LblBrightnessTitle != null) LblBrightnessTitle.Text = LocalizationManager.BrightnessSliderTitle;
 
-            if (CmbLedMode != null)
-            {
-                foreach (var item in CmbLedMode.Items)
-                {
-                    if (item is ComboBoxItem cbItem && cbItem.Tag is string tag)
-                    {
-                        cbItem.Content = tag switch
-                        {
-                            "Breathing" => LocalizationManager.LedBreathing,
-                            "ColorfulCycle" => LocalizationManager.LedDynamic,
-                            "Rainbow" => LocalizationManager.LedRainbow,
-                            "TripleZone" => LocalizationManager.LedTripleZone,
-                            _ => LocalizationManager.LedStatic
-                        };
-                    }
-                }
-            }
+            if (TxtItemStaticLabel != null) TxtItemStaticLabel.Text = LocalizationManager.LedStatic;
+            if (TxtItemBreathingLabel != null) TxtItemBreathingLabel.Text = LocalizationManager.LedBreathing;
+            if (TxtItemDynamicLabel != null) TxtItemDynamicLabel.Text = LocalizationManager.LedDynamic;
+            if (TxtItemCycleLabel != null) TxtItemCycleLabel.Text = LocalizationManager.LedCycle;
+            if (TxtItemRainbowLabel != null) TxtItemRainbowLabel.Text = LocalizationManager.LedRainbow;
+            if (TxtItemTripleZoneLabel != null) TxtItemTripleZoneLabel.Text = LocalizationManager.LedTripleZone;
 
             if (TxtModeColorActionLabel != null) TxtModeColorActionLabel.Text = LocalizationManager.ColorLabel;
 
@@ -888,15 +1096,21 @@ namespace EHelper
             UpdateTripleZoneUI();
 
             if (ChkAutoStart != null) ChkAutoStart.Content = LocalizationManager.AutoStart;
-            if (BtnExitApp != null) BtnExitApp.Content = LocalizationManager.Exit;
-            if (BtnLangToggle != null) BtnLangToggle.Content = LocalizationManager.LangButton;
+            if (TxtExitAppLabel != null) TxtExitAppLabel.Text = LocalizationManager.Exit;
+            if (TxtLangToggleLabel != null) TxtLangToggleLabel.Text = LocalizationManager.LangButton;
 
-            if (BtnThemeToggle != null)
+            if (TxtThemeToggleLabel != null)
             {
-                BtnThemeToggle.Content = _isDarkTheme ? LocalizationManager.ThemeLight : LocalizationManager.ThemeDark;
+                TxtThemeToggleLabel.Text = _isDarkTheme ? LocalizationManager.ThemeLight : LocalizationManager.ThemeDark;
+            }
+            if (IconThemePath != null)
+            {
+                IconThemePath.Data = _isDarkTheme ? (Geometry)FindResource("IconSun") : (Geometry)FindResource("IconMoon");
             }
 
+            if (LblCycleSpeedTitle != null) LblCycleSpeedTitle.Text = LocalizationManager.CycleSpeedTitle;
             UpdateBrightnessUI();
+            UpdateCycleSpeedUI();
             UpdateUpdateStatusUI();
         }
 

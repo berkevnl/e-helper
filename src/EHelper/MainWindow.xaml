@@ -15,15 +15,38 @@
         ShowInTaskbar="False"
         Topmost="True"
         ResizeMode="NoResize"
-        FontFamily="Segoe UI, Segoe UI Variable Text, Arial"
+        FontFamily="Google Sans, Inter, Roboto, Segoe UI Variable Display, Segoe UI, sans-serif"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
         TextOptions.TextFormattingMode="Display"
         TextOptions.TextRenderingMode="ClearType"
         TextOptions.TextHintingMode="Fixed"
+        RenderOptions.ClearTypeHint="Enabled"
+        RenderOptions.BitmapScalingMode="HighQuality"
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
     <Window.Resources>
+        <!-- Crisp Vector Icon Geometries (Zero-RAM Overhead, Lucide / Modern System Icons) -->
+        <Geometry x:Key="IconGauge">M12,15 A3,3 0 1,0 12,9 A3,3 0 0,0 12,15 M12,15 L15.5,11.5 M3.34,19 A10,10 0 1,1 20.66,19</Geometry>
+        <Geometry x:Key="IconEco">M11,20 A7,7 0 0,1 9.8,6.1 C15.5,5 17,4.48 19,2 C20,4 21,6.18 21,10 C21,15.5 16.22,20 11,20 Z M2,21 C2,18 3.85,15.64 7.08,15 C9.5,14.52 12,13 13,12</Geometry>
+        <Geometry x:Key="IconBalanced">M4,21 L4,14 M4,10 L4,3 M12,21 L12,12 M12,8 L12,3 M20,21 L20,16 M20,12 L20,3 M1,14 L7,14 M9,8 L15,8 M17,16 L23,16</Geometry>
+        <Geometry x:Key="IconTurbo">M8.5,14.5 A2.5,2.5 0 0,0 11,12 C11,10.62 10.5,10 10,9 C8.93,6.86 9.78,4.95 12,3 C12.5,5.5 14,7.9 16,9.5 C18,11.1 19,13 19,15 A7,7 0 1,1 5,15 C5,13.85 5.43,12.7 6,12 A2.5,2.5 0 0,0 8.5,14.5 Z</Geometry>
+        <Geometry x:Key="IconChip">M4,4 L20,4 L20,20 L4,20 Z M9,9 L15,9 L15,15 L9,15 Z M9,1 L9,4 M15,1 L15,4 M9,20 L9,23 M15,20 L15,23 M1,9 L4,9 M1,15 L4,15 M20,9 L23,9 M20,15 L23,15</Geometry>
+        <Geometry x:Key="IconActivity">M22,12 L18,12 L15,21 L9,3 L6,12 L2,12</Geometry>
+        <Geometry x:Key="IconKeyboard">M2,6 C2,4.9 2.9,4 4,4 L20,4 C21.1,4 22,4.9 22,6 L22,18 C22,19.1 21.1,20 20,20 L4,20 C2.9,20 2,19.1 2,18 Z M6,8 L8,8 M11,8 L13,8 M16,8 L18,8 M6,12 L8,12 M16,12 L18,12 M10,12 L14,12 M6,16 L18,16</Geometry>
+        <Geometry x:Key="IconSun">M12,7 A5,5 0 1,0 12,17 A5,5 0 0,0 12,7 M12,1 L12,4 M12,20 L12,23 M4.22,4.22 L6.34,6.34 M17.66,17.66 L19.78,19.78 M1,12 L4,12 M20,12 L23,12 M4.22,19.78 L6.34,17.66 M17.66,6.34 L19.78,4.22</Geometry>
+        <Geometry x:Key="IconMoon">M21,12.79 A9,9 0 1,1 11.21,3 A7,7 0 0,0 21,12.79 Z</Geometry>
+        <Geometry x:Key="IconGlobe">M12,2 A10,10 0 1,0 22,12 A10,10 0 0,0 12,2 M2,12 L22,12 M12,2 C14.5,5 16,8.5 16,12 C16,15.5 14.5,19 12,22 C9.5,19 8,15.5 8,12 C8,8.5 9.5,5 12,2</Geometry>
+        <Geometry x:Key="IconPower">M9,21 L5,21 C3.9,21 3,20.1 3,19 L3,5 C3,3.9 3.9,3 5,3 L9,3 M16,17 L21,12 L16,7 M21,12 L9,12</Geometry>
+
+        <!-- Lighting Mode Geometries (Uniform 24x24 Vector Symbols) -->
+        <Geometry x:Key="IconModeStatic">M12,2 L14.5,8.5 L21,11 L14.5,13.5 L12,20 L9.5,13.5 L3,11 L9.5,8.5 Z</Geometry>
+        <Geometry x:Key="IconModeBreathing">M2,12 C5,6 9,6 12,12 C15,18 19,18 22,12</Geometry>
+        <Geometry x:Key="IconModeDynamic">M13,2 L4,13 L11,13 L10,22 L19,11 L12,11 Z</Geometry>
+        <Geometry x:Key="IconModeCycle">M21,12 A9,9 0 1,1 18.36,5.64 L21,8 M21,3 L21,8 L16,8</Geometry>
+        <Geometry x:Key="IconModeRainbow">M3,18 A9,9 0 0,1 21,18 M7,18 A5,5 0 0,1 17,18 M10,18 A2,2 0 0,1 14,18</Geometry>
+        <Geometry x:Key="IconModeTripleZone">M3,6 C3,4.9 3.9,4 5,4 L19,4 C20.1,4 21,4.9 21,6 L21,18 C21,19.1 20.1,20 19,20 L5,20 C3.9,20 3,19.1 3,18 Z M9,4 L9,20 M15,4 L15,20</Geometry>
+
         <!-- Dynamic Theme Tokens (Default: G-Helper Authentic Matte Dark) -->
         <SolidColorBrush x:Key="WindowBg" Color="#161616"/>
         <SolidColorBrush x:Key="TileBg" Color="#252525"/>
@@ -39,7 +62,7 @@
         <SolidColorBrush x:Key="AccentGreen" Color="#22C55E"/>
         <SolidColorBrush x:Key="DangerRed" Color="#EF4444"/>
 
-        <!-- G-Helper Square Tile Button Style -->
+        <!-- G-Helper Square Tile Button Style with Soft Micro-interaction -->
         <Style x:Key="GHelperTileStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource TileBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
@@ -53,16 +76,45 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="border"
-                                Background="{TemplateBinding Background}"
-                                BorderBrush="{TemplateBinding BorderBrush}"
-                                BorderThickness="{TemplateBinding BorderThickness}"
-                                CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                        </Border>
+                        <Grid>
+                            <Border x:Name="border"
+                                    Background="{TemplateBinding Background}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4"/>
+                            <Border x:Name="hoverGlow"
+                                    Background="{DynamicResource TileHoverBg}"
+                                    BorderBrush="{TemplateBinding BorderBrush}"
+                                    BorderThickness="{TemplateBinding BorderThickness}"
+                                    CornerRadius="4"
+                                    Opacity="0"/>
+                            <ContentPresenter Margin="{TemplateBinding Padding}"
+                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
+                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="border" Property="Background" Value="{DynamicResource TileHoverBg}"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="hoverGlow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.16"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="hoverGlow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.16"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.82"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -77,7 +129,7 @@
             <Setter Property="BorderThickness" Value="2"/>
         </Style>
 
-        <!-- Compact Bottom Action Button Style -->
+        <!-- Compact Bottom Action Button Style with Soft Micro-interaction -->
         <Style x:Key="FooterBtnStyle" TargetType="Button">
             <Setter Property="Background" Value="{DynamicResource TileBg}"/>
             <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
@@ -89,13 +141,36 @@
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
+                        <Grid>
+                            <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4"/>
+                            <Border x:Name="hoverGlow" Background="{DynamicResource TileHoverBg}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Opacity="0"/>
                             <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                        </Border>
+                        </Grid>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{DynamicResource TileHoverBg}"/>
+                                <Trigger.EnterActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="hoverGlow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="1" Duration="0:0:0.16"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.EnterActions>
+                                <Trigger.ExitActions>
+                                    <BeginStoryboard>
+                                        <Storyboard>
+                                            <DoubleAnimation Storyboard.TargetName="hoverGlow"
+                                                             Storyboard.TargetProperty="Opacity"
+                                                             To="0" Duration="0:0:0.16"/>
+                                        </Storyboard>
+                                    </BeginStoryboard>
+                                </Trigger.ExitActions>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter Property="Opacity" Value="0.82"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -321,8 +396,9 @@
             </Border.Effect>
         </Border>
 
-        <!-- Main Sharp Card Layer -->
-        <Border Background="{DynamicResource WindowBg}" 
+        <!-- Main Sharp Card Layer with Gentle Fluid Animation -->
+        <Border x:Name="RootCard"
+                Background="{DynamicResource WindowBg}" 
                 BorderBrush="{DynamicResource TileBorder}" 
                 BorderThickness="1" 
                 CornerRadius="8"
@@ -330,6 +406,9 @@
                 TextOptions.TextFormattingMode="Display"
                 TextOptions.TextRenderingMode="ClearType"
                 TextOptions.TextHintingMode="Fixed">
+            <Border.RenderTransform>
+                <TranslateTransform x:Name="RootTranslate" Y="0"/>
+            </Border.RenderTransform>
 
             <Grid Margin="14,12">
                 <Grid.RowDefinitions>
@@ -380,7 +459,9 @@
                     <!-- Section Header Row: Title on Left | CPU Temp & RPM on Right -->
                     <Grid Margin="0,0,0,8">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="⏱" FontSize="13" Foreground="{DynamicResource TextPrimary}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <Viewbox Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconGauge}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                            </Viewbox>
                             <TextBlock x:Name="TxtPowerModeTitle" Text="Performans Modu: Dengeli" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
                         </StackPanel>
 
@@ -402,26 +483,32 @@
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Tasarruf Button (Bicycle as in G-Helper) -->
+                        <!-- Tasarruf Button -->
                         <Button x:Name="BtnModeOffice" Grid.Column="0" Style="{StaticResource GHelperTileStyle}" Click="BtnModeOffice_Click">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="🚲" FontSize="18" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,1">
+                                <Viewbox Width="16" Height="16" HorizontalAlignment="Center" Margin="0,2,0,5">
+                                    <Path Data="{StaticResource IconEco}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                                </Viewbox>
                                 <TextBlock x:Name="TxtModeOfficeLabel" Text="Tasarruf" FontSize="12" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
-                        <!-- Dengeli Button (Car as in G-Helper) -->
+                        <!-- Dengeli Button -->
                         <Button x:Name="BtnModeGaming" Grid.Column="2" Style="{StaticResource ActiveGHelperTileStyle}" Click="BtnModeGaming_Click">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="🚗" FontSize="18" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,1">
+                                <Viewbox Width="16" Height="16" HorizontalAlignment="Center" Margin="0,2,0,5">
+                                    <Path Data="{StaticResource IconBalanced}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                                </Viewbox>
                                 <TextBlock x:Name="TxtModeGamingLabel" Text="Dengeli" FontSize="12" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
 
-                        <!-- Performans Button (Rocket as in G-Helper) -->
+                        <!-- Performans Button -->
                         <Button x:Name="BtnModeHighPerf" Grid.Column="4" Style="{StaticResource GHelperTileStyle}" Click="BtnModeHighPerf_Click">
-                            <StackPanel HorizontalAlignment="Center">
-                                <TextBlock Text="🚀" FontSize="18" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" Margin="0,0,0,4"/>
+                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,1">
+                                <Viewbox Width="16" Height="16" HorizontalAlignment="Center" Margin="0,2,0,5">
+                                    <Path Data="{StaticResource IconTurbo}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                                </Viewbox>
                                 <TextBlock x:Name="TxtModeHighPerfLabel" Text="Performans" FontSize="12" HorizontalAlignment="Center"/>
                             </StackPanel>
                         </Button>
@@ -431,7 +518,9 @@
                 <!-- 2: Section: GPU Modu & Telemetri -->
                 <Grid Grid.Row="2" Margin="0,0,0,14">
                     <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="🖥️" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                        <Viewbox Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center">
+                            <Path Data="{StaticResource IconChip}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                        </Viewbox>
                         <TextBlock x:Name="TxtGpuHeader" Text="GPU Modu: Ayrık / Hibrit" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
                     </StackPanel>
 
@@ -447,7 +536,9 @@
                 <StackPanel Grid.Row="3" Margin="0,0,0,14">
                     <Grid Margin="0,0,0,8">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="📊" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <Viewbox Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconActivity}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
+                            </Viewbox>
                             <TextBlock x:Name="TxtSysResourcesHeader" Text="Sistem Kaynakları" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
                         </StackPanel>
                     </Grid>
@@ -492,13 +583,16 @@
                 <StackPanel Grid.Row="4" Margin="0,0,0,14">
                     <Grid Margin="0,0,0,8">
                         <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <TextBlock Text="⌨" FontSize="12" Foreground="{DynamicResource TextPrimary}" Margin="0,0,6,0" VerticalAlignment="Center"/>
+                            <Viewbox Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconKeyboard}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                            </Viewbox>
                             <TextBlock x:Name="TxtKeyboardHeader" Text="Laptop Klavyesi" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
                         </StackPanel>
 
                         <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
                             <TextBlock x:Name="LblBrightnessHeader" Text="Parlaklık: " FontSize="12" Foreground="{DynamicResource TextMuted}"/>
                             <TextBlock x:Name="TxtBrightnessIcon" Text="%100" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                            <TextBlock x:Name="TxtSpeedHeader" Text=" - Yavaş" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Visibility="Collapsed"/>
                         </StackPanel>
                     </Grid>
 
@@ -515,11 +609,54 @@
                                   Style="{StaticResource GHelperComboBoxStyle}" 
                                   ItemContainerStyle="{StaticResource GHelperComboBoxItemStyle}"
                                   SelectionChanged="CmbLedMode_SelectionChanged">
-                            <ComboBoxItem Content="✨ Sabit" Tag="Static"/>
-                            <ComboBoxItem Content="💨 Nefes" Tag="Breathing"/>
-                            <ComboBoxItem Content="💫 Dinamik" Tag="ColorfulCycle"/>
-                            <ComboBoxItem Content="🌈 Gökkuşağı" Tag="Rainbow"/>
-                            <ComboBoxItem Content="🎨 3-Bölge" Tag="TripleZone"/>
+                            <ComboBoxItem x:Name="CmbItemStatic" Tag="Static">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource IconModeStatic}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
+                                    </Viewbox>
+                                    <TextBlock x:Name="TxtItemStaticLabel" Text="Sabit" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ComboBoxItem>
+                            <ComboBoxItem x:Name="CmbItemBreathing" Tag="Breathing">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource IconModeBreathing}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                                    </Viewbox>
+                                    <TextBlock x:Name="TxtItemBreathingLabel" Text="Nefes" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ComboBoxItem>
+                            <ComboBoxItem x:Name="CmbItemDynamic" Tag="ColorfulCycle">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource IconModeDynamic}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
+                                    </Viewbox>
+                                    <TextBlock x:Name="TxtItemDynamicLabel" Text="Dinamik" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ComboBoxItem>
+                            <ComboBoxItem x:Name="CmbItemCycle" Tag="Cycle">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource IconModeCycle}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                                    </Viewbox>
+                                    <TextBlock x:Name="TxtItemCycleLabel" Text="Döngü" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ComboBoxItem>
+                            <ComboBoxItem x:Name="CmbItemRainbow" Tag="Rainbow">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource IconModeRainbow}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                                    </Viewbox>
+                                    <TextBlock x:Name="TxtItemRainbowLabel" Text="Gökkuşağı" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ComboBoxItem>
+                            <ComboBoxItem x:Name="CmbItemTripleZone" Tag="TripleZone">
+                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
+                                        <Path Data="{StaticResource IconModeTripleZone}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
+                                    </Viewbox>
+                                    <TextBlock x:Name="TxtItemTripleZoneLabel" Text="3-Bölge" FontSize="12" VerticalAlignment="Center"/>
+                                </StackPanel>
+                            </ComboBoxItem>
                         </ComboBox>
 
                         <!-- Right: Side Color Button (Always visible; enabled for Static, Breathing, TripleZone) -->
@@ -543,10 +680,22 @@
                             <ColumnDefinition Width="Auto"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="LblBrightnessTitle" Text="Parlaklık" FontSize="12" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="LblBrightnessTitle" Text="Parlaklık" MinWidth="54" FontSize="12" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
                         <Slider x:Name="SliderBrightness" Grid.Column="1" Margin="12,0,0,0" Minimum="0" Maximum="2" Value="2" 
                                 Style="{StaticResource ModernBrightnessSliderStyle}"
                                 TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="SliderBrightness_ValueChanged"/>
+                    </Grid>
+
+                    <!-- Speed Slider (Visible in Cycle, Rainbow, Breathing modes) -->
+                    <Grid x:Name="PnlCycleSpeed" Margin="0,0,0,8" Visibility="Collapsed">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="LblCycleSpeedTitle" Text="Hız" MinWidth="54" FontSize="12" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                        <Slider x:Name="SliderCycleSpeed" Grid.Column="1" Margin="12,0,0,0" Minimum="0" Maximum="2" Value="0" 
+                                Style="{StaticResource ModernBrightnessSliderStyle}"
+                                TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="SliderCycleSpeed_ValueChanged"/>
                     </Grid>
 
                     <!-- Bird's-eye 2D 3-Piece Keyboard Symbol (Visible only in 3-Bölge mode) -->
@@ -657,13 +806,34 @@
                         </Grid.ColumnDefinitions>
 
                         <!-- Tema butonu (Açık/Koyu) -->
-                        <Button x:Name="BtnThemeToggle" Grid.Column="0" Content="☀️ Açık" Style="{StaticResource FooterBtnStyle}" Click="BtnThemeToggle_Click"/>
+                        <Button x:Name="BtnThemeToggle" Grid.Column="0" Style="{StaticResource FooterBtnStyle}" Click="BtnThemeToggle_Click">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Path x:Name="IconThemePath" Data="{StaticResource IconSun}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtThemeToggleLabel" Text="Açık" FontSize="11" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
                         <!-- Dil butonu (TR/EN) -->
-                        <Button x:Name="BtnLangToggle" Grid.Column="2" Content="🌐 EN" Style="{StaticResource FooterBtnStyle}" ToolTip="Dili Değiştir / Change Language" Click="BtnLangToggle_Click"/>
+                        <Button x:Name="BtnLangToggle" Grid.Column="2" Style="{StaticResource FooterBtnStyle}" ToolTip="Dili Değiştir / Change Language" Click="BtnLangToggle_Click">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconGlobe}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtLangToggleLabel" Text="EN" FontSize="11" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
 
                         <!-- Çıkış butonu -->
-                        <Button x:Name="BtnExitApp" Grid.Column="4" Content="➔ Çıkış" Style="{StaticResource FooterBtnStyle}" Click="BtnExitApp_Click"/>
+                        <Button x:Name="BtnExitApp" Grid.Column="4" Style="{StaticResource FooterBtnStyle}" Click="BtnExitApp_Click">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
+                                <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconPower}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtExitAppLabel" Text="Çıkış" FontSize="11" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </Button>
                     </Grid>
                 </Grid>
 

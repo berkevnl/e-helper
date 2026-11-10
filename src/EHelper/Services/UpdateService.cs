@@ -25,7 +25,7 @@ namespace EHelper.Services
     public static class UpdateService
     {
         private const string GitHubRepo = "berkevnl/E-Helper";
-        public const string CurrentVersion = "1.1.1";
+        public const string CurrentVersion = "1.2.0";
 
         private static readonly HttpClient HttpClient = new();
 

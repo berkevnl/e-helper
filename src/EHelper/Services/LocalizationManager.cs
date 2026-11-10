@@ -35,12 +35,18 @@ namespace EHelper.Services
         public static string BrightnessLabel => IsTurkish ? "Parlaklık: " : "Brightness: ";
         public static string BrightnessSliderTitle => IsTurkish ? "Parlaklık" : "Brightness";
 
-        public static string LedStatic => IsTurkish ? "✨ Sabit" : "✨ Static";
-        public static string LedBreathing => IsTurkish ? "💨 Nefes" : "💨 Breathing";
-        public static string LedDynamic => IsTurkish ? "💫 Dinamik" : "💫 Dynamic";
-        public static string LedRainbow => IsTurkish ? "🌈 Gökkuşağı" : "🌈 Rainbow";
-        public static string LedTripleZone => IsTurkish ? "🎨 3-Bölge" : "🎨 3-Zone";
+        public static string LedStatic => IsTurkish ? "Sabit" : "Static";
+        public static string LedBreathing => IsTurkish ? "Nefes" : "Breathing";
+        public static string LedDynamic => IsTurkish ? "Dinamik" : "Dynamic";
+        public static string LedCycle => IsTurkish ? "Döngü" : "Cycle";
+        public static string LedRainbow => IsTurkish ? "Gökkuşağı" : "Rainbow";
+        public static string LedTripleZone => IsTurkish ? "3-Bölge" : "3-Zone";
         public static string ColorLabel => IsTurkish ? "Renk" : "Color";
+
+        public static string CycleSpeedTitle => IsTurkish ? "Hız" : "Speed";
+        public static string SpeedSlow => IsTurkish ? "Yavaş" : "Slow";
+        public static string SpeedMedium => IsTurkish ? "Orta" : "Medium";
+        public static string SpeedFast => IsTurkish ? "Hızlı" : "Fast";
 
         public static string ZoneLeftLabel => IsTurkish ? "Sol Bölge" : "Left Zone";
         public static string ZoneCenterLabel => IsTurkish ? "Orta Bölge" : "Center Zone";
@@ -54,11 +60,11 @@ namespace EHelper.Services
         public static string AutoStart => IsTurkish ? "Başlangıçta Çalıştır" : "Start with Windows";
         public static string CheckUpdates => IsTurkish ? "📥 Güncellemeler" : "📥 Updates";
 
-        public static string ThemeLight => IsTurkish ? "☀️ Açık" : "☀️ Light";
-        public static string ThemeDark => IsTurkish ? "🌙 Koyu" : "🌙 Dark";
-        public static string Refresh => IsTurkish ? "🔃 Yenile" : "🔃 Refresh";
-        public static string Exit => IsTurkish ? "➔ Çıkış" : "➔ Exit";
-        public static string LangButton => IsTurkish ? "🌐 EN" : "🌐 TR";
+        public static string ThemeLight => IsTurkish ? "Açık" : "Light";
+        public static string ThemeDark => IsTurkish ? "Koyu" : "Dark";
+        public static string Refresh => IsTurkish ? "Yenile" : "Refresh";
+        public static string Exit => IsTurkish ? "Çıkış" : "Exit";
+        public static string LangButton => IsTurkish ? "EN" : "TR";
 
         public static string ColorDialogTitle => IsTurkish ? "Renk Seçimi" : "Color";
         public static string ColorOkButton => IsTurkish ? "Tamam" : "OK";

@@ -16,6 +16,7 @@ namespace EHelper.Core
     {
         Off = 0,
         Static = 1,
+        Cycle = 2,
         Breathing = 3,
         ColorfulCycle = 6,
         Rainbow = 7,

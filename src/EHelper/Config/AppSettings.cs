@@ -24,6 +24,7 @@ namespace EHelper.Config
         public byte ZoneRightRed { get; set; } = 239;
         public byte ZoneRightGreen { get; set; } = 68;
         public byte ZoneRightBlue { get; set; } = 68;
+        public int CycleSpeed { get; set; } = 0; // 0: Slow, 1: Medium, 2: Fast
         public bool StartWithWindows { get; set; } = true;
         public int PollingIntervalSeconds { get; set; } = 3;
         public bool IsDarkTheme { get; set; } = true;
