@@ -89,6 +89,7 @@ ASUS ekosisteminde devrim yaratan **G-Helper** felsefesi temel alınarak gelişt
   * `2` : **%100 Parlaklık** — Tam parlaklık seviyesi.
   * *Kaydırıcı çubuğun istenen noktasına tıklanarak doğrudan istenen kademeye geçilebilir.*
 * **Yeniden Başlatmada Korunum:** Bilgisayar yeniden başlatıldığında klavye modunuz, parlaklığınız, animasyon hızınız ve bölge renkleriniz otomatik olarak geri yüklenir.
+* **Akıllı Boşta Kalma (Uyku) Zamanlayıcısı:** RGB kartının sağ üst köşesindeki sayaç simgesinden 15s, 30s, 45s, 60s veya 5dk seçilerek boşta kalındığında klavye aydınlatmasının otomatik kapanması; klavye tuşuna, fareye veya touchpad'e dokunulduğu anda son ayarlarla otomatik uyanması.
 
 ### 4. 🎨 Arayüz ve Görsel Ergonomi
 * **Modern Tipografi:** Google Sans ve modern sistem yazı tipleri; ClearType ve Display alt piksel işleme modları ile tüm monitörlerde jilet gibi keskin metin görünümü.

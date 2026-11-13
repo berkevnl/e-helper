@@ -56,12 +56,33 @@ namespace EHelper
         private string? _activeProfileName;
         private AppProfile? _snapshotBeforeProfile;
 
+        private readonly KeyboardIdleWatcherService _idleWatcher;
+
         public MainWindow(IHardwareProvider bridge, bool isSimulated, ConfigManager config, HardwareMonitorService monitor)
         {
             _bridge = bridge ?? throw new ArgumentNullException(nameof(bridge));
             _isSimulated = isSimulated;
             _config = config ?? throw new ArgumentNullException(nameof(config));
             _monitor = monitor ?? throw new ArgumentNullException(nameof(monitor));
+
+            _idleWatcher = new KeyboardIdleWatcherService(_config.CurrentSettings.KeyboardIdleTimeoutSeconds);
+            _idleWatcher.IdleStateChanged += isIdle =>
+            {
+                Dispatcher.InvokeAsync(() =>
+                {
+                    if (isIdle)
+                    {
+                        // Keyboard sleep: turn off backlight without clearing user settings
+                        StopActiveAnimation();
+                        _bridge.TurnOffAllLights();
+                    }
+                    else
+                    {
+                        // Wake up: resume active lighting mode, speed, and brightness
+                        ApplyLedHardwareOnly();
+                    }
+                });
+            };
 
             InitializeComponent();
 
@@ -127,6 +148,7 @@ namespace EHelper
             UpdateColorSwatches();
             UpdatePowerModeButtonsUI();
             UpdateLedModeButtonsUI();
+            UpdateRgbSleepUI();
 
             // Initial push to hardware asynchronously in background (0ms UI startup delay)
             System.Threading.Tasks.Task.Run(() =>
@@ -298,6 +320,7 @@ namespace EHelper
         protected override void OnClosed(EventArgs e)
         {
             StopActiveAnimation();
+            _idleWatcher?.Dispose();
             base.OnClosed(e);
         }
 
@@ -798,6 +821,7 @@ namespace EHelper
         {
             if (!_isInitialized || _bridge == null || _config == null) return;
 
+            _idleWatcher?.ResetWake();
             ApplyLedHardwareOnly();
 
             _config.CurrentSettings.LedMode = _currentLedMode;
@@ -924,6 +948,88 @@ namespace EHelper
 
         #endregion
 
+        #region RGB Sleep Timer Handlers
+
+        private void BtnRgbSleepTimer_Click(object sender, RoutedEventArgs e)
+        {
+            if (PopupRgbSleep != null)
+            {
+                PopupRgbSleep.IsOpen = !PopupRgbSleep.IsOpen;
+            }
+        }
+
+        private void SleepOption_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is FrameworkElement fe && fe.Tag is string tagStr && int.TryParse(tagStr, out int seconds))
+            {
+                SetKeyboardSleepTimeout(seconds);
+            }
+        }
+
+        private void SetKeyboardSleepTimeout(int seconds)
+        {
+            _config.CurrentSettings.KeyboardIdleTimeoutSeconds = seconds;
+            _config.SaveSettings();
+            _idleWatcher.TimeoutSeconds = seconds;
+            UpdateRgbSleepUI();
+            if (PopupRgbSleep != null)
+            {
+                PopupRgbSleep.IsOpen = false;
+            }
+        }
+
+        private void UpdateRgbSleepUI()
+        {
+            if (_config == null) return;
+            int seconds = _config.CurrentSettings.KeyboardIdleTimeoutSeconds;
+            bool isEnabled = seconds > 0;
+
+            if (CheckSleepOpt0 != null) CheckSleepOpt0.Visibility = (seconds == 0) ? Visibility.Visible : Visibility.Collapsed;
+            if (CheckSleepOpt15 != null) CheckSleepOpt15.Visibility = (seconds == 15) ? Visibility.Visible : Visibility.Collapsed;
+            if (CheckSleepOpt30 != null) CheckSleepOpt30.Visibility = (seconds == 30) ? Visibility.Visible : Visibility.Collapsed;
+            if (CheckSleepOpt45 != null) CheckSleepOpt45.Visibility = (seconds == 45) ? Visibility.Visible : Visibility.Collapsed;
+            if (CheckSleepOpt60 != null) CheckSleepOpt60.Visibility = (seconds == 60) ? Visibility.Visible : Visibility.Collapsed;
+            if (CheckSleepOpt300 != null) CheckSleepOpt300.Visibility = (seconds == 300) ? Visibility.Visible : Visibility.Collapsed;
+
+            if (TxtRgbSleepTimerLabel != null)
+            {
+                TxtRgbSleepTimerLabel.Text = seconds switch
+                {
+                    15 => "15s",
+                    30 => "30s",
+                    45 => "45s",
+                    60 => "60s",
+                    300 => LocalizationManager.IsTurkish ? "5dk" : "5m",
+                    _ => LocalizationManager.SleepOffLabel
+                };
+
+                var accentBrush = TryFindResource("AccentColor") as Brush ?? (Brush)FindResource("AccentCyan");
+                var mutedBrush = TryFindResource("TextMuted") as Brush ?? Brushes.Gray;
+
+                TxtRgbSleepTimerLabel.Foreground = isEnabled ? accentBrush : mutedBrush;
+                if (IconTimerPath != null)
+                {
+                    IconTimerPath.Stroke = isEnabled ? accentBrush : mutedBrush;
+                }
+            }
+
+            if (BtnRgbSleepTimer != null)
+            {
+                string secLabel = seconds switch
+                {
+                    15 => LocalizationManager.Sleep15s,
+                    30 => LocalizationManager.Sleep30s,
+                    45 => LocalizationManager.Sleep45s,
+                    60 => LocalizationManager.Sleep60s,
+                    300 => LocalizationManager.Sleep5m,
+                    _ => LocalizationManager.SleepDisabled
+                };
+                BtnRgbSleepTimer.ToolTip = $"{LocalizationManager.KeyboardSleepTimer}: {secLabel}";
+            }
+        }
+
+        #endregion
+
         #endregion
 
         #region Theme Switcher
@@ -1035,6 +1141,7 @@ namespace EHelper
             UpdatePowerModeButtonsUI();
             HighlightBrightnessButtons(_brightness);
             HighlightSpeedButtons(_cycleSpeed);
+            UpdateRgbSleepUI();
         }
 
         private static MediaColor ParseColor(string hex, MediaColor fallback)
@@ -1480,6 +1587,14 @@ namespace EHelper
             UpdatePowerModeButtonsUI();
             UpdateLedModeButtonsUI();
             UpdateUpdateStatusUI();
+
+            if (TxtSleepOpt0 != null) TxtSleepOpt0.Text = LocalizationManager.SleepDisabled;
+            if (TxtSleepOpt15 != null) TxtSleepOpt15.Text = LocalizationManager.Sleep15s;
+            if (TxtSleepOpt30 != null) TxtSleepOpt30.Text = LocalizationManager.Sleep30s;
+            if (TxtSleepOpt45 != null) TxtSleepOpt45.Text = LocalizationManager.Sleep45s;
+            if (TxtSleepOpt60 != null) TxtSleepOpt60.Text = LocalizationManager.Sleep60s;
+            if (TxtSleepOpt300 != null) TxtSleepOpt300.Text = LocalizationManager.Sleep5m;
+            UpdateRgbSleepUI();
         }
 
         private void BtnLangToggle_Click(object sender, RoutedEventArgs e)

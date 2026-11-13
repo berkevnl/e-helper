@@ -27,6 +27,7 @@ namespace EHelper.Config
         public int CycleSpeed { get; set; } = 0; // 0: Slow, 1: Medium, 2: Fast
         public bool StartWithWindows { get; set; } = true;
         public int PollingIntervalSeconds { get; set; } = 3;
+        public int KeyboardIdleTimeoutSeconds { get; set; } = 0; // 0: Off/Disabled, 15, 30, 45, 60, 300
         public bool IsDarkTheme { get; set; } = true;
         public string Language { get; set; } = "TR";
         public string ThemeAccentColor { get; set; } = "#22D3EE";

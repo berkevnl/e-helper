@@ -130,5 +130,14 @@ namespace EHelper.Services
         public static string MinimizeTooltip => IsTurkish ? "Simge Durumuna Küçült" : "Minimize";
         public static string ThemeTooltip => IsTurkish ? "Tema (Koyu / Açık)" : "Theme (Dark / Light)";
         public static string LanguageTooltip => IsTurkish ? "Dil (TR / EN)" : "Language (TR / EN)";
+
+        public static string KeyboardSleepTimer => IsTurkish ? "Klavye Uyku Zamanlayıcısı" : "Keyboard Sleep Timer";
+        public static string SleepDisabled => IsTurkish ? "Devre Dışı" : "Disabled";
+        public static string Sleep15s => IsTurkish ? "15 saniye" : "15 seconds";
+        public static string Sleep30s => IsTurkish ? "30 saniye" : "30 seconds";
+        public static string Sleep45s => IsTurkish ? "45 saniye" : "45 seconds";
+        public static string Sleep60s => IsTurkish ? "60 saniye" : "60 seconds";
+        public static string Sleep5m => IsTurkish ? "5 dakika" : "5 minutes";
+        public static string SleepOffLabel => IsTurkish ? "Kapalı" : "Off";
     }
 }

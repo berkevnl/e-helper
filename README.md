@@ -89,6 +89,7 @@ Inspired by the acclaimed **G-Helper** philosophy, E-Helper communicates directl
   * `2` : **100% Brightness** — Full maximum illumination.
   * *Supports direct click-to-position on the slider track.*
 * **Cold-Boot Resilience:** Re-synchronizes lighting mode, brightness, speed, and custom colors on system boot.
+* **Smart Inactivity Sleep Timer:** Configure auto-sleep timeouts (15s, 30s, 45s, 60s, or 5m) via the timer button in the RGB header to turn off backlighting when idle; instantly restores active lighting mode and brightness on any keyboard, mouse, or touchpad input.
 
 ### 4. 🎨 UI & Visual Ergonomics
 * **Modern Typography:** High-clarity Google Sans and system font stacks rendered with ClearType and Display subpixel rendering modes for crisp legibility.
