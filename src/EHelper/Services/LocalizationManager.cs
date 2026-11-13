@@ -120,6 +120,8 @@ namespace EHelper.Services
         public static string VersionPrefix => IsTurkish ? "Sürüm: " : "Version: ";
         public static string DownloadPrefix => IsTurkish ? "İndir: " : "Download: ";
         public static string UpdatingStatus => IsTurkish ? "Güncelleniyor..." : "Updating...";
+        public static string DownloadingStatus => IsTurkish ? "İndiriliyor" : "Downloading";
+        public static string ExtractingStatus => IsTurkish ? "Paket açılıyor ve güncelleniyor..." : "Extracting & updating...";
         public static string UpdateBannerTitle => IsTurkish ? "Güncellemesi Mevcut" : "Update Available";
         public static string UpdateNow => IsTurkish ? "Güncelle" : "Update";
         public static string UpToDate => IsTurkish ? "- Güncel" : "- Up to date";

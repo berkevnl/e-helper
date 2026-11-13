@@ -25,7 +25,7 @@ namespace EHelper.Services
     public static class UpdateService
     {
         private const string GitHubRepo = "berkevnl/E-Helper";
-        public const string CurrentVersion = "1.2.0";
+        public const string CurrentVersion = "1.3.1";
 
         private static readonly HttpClient HttpClient = new();
 
@@ -34,12 +34,13 @@ namespace EHelper.Services
             HttpClient.DefaultRequestHeaders.UserAgent.Add(
                 new ProductInfoHeaderValue("E-Helper-App", CurrentVersion)
             );
-            HttpClient.Timeout = TimeSpan.FromSeconds(20);
+            HttpClient.Timeout = TimeSpan.FromSeconds(60);
         }
 
         /// <summary>
         /// Silently checks for updates in the background without showing any popups.
         /// Returns UpdateCheckResult containing version details and zip/exe download URL.
+        /// Strictly prioritizes compressed ZIP archives (~64MB) over full EXEs (~160MB).
         /// </summary>
         public static async Task<UpdateCheckResult> CheckUpdateSilentAsync()
         {
@@ -95,7 +96,11 @@ namespace EHelper.Services
 
                             if (name.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
                             {
-                                zipUrl = assetUrl;
+                                // Prefer the x64 standalone package if multiple zips exist
+                                if (zipUrl == null || name.Contains("win-x64", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    zipUrl = assetUrl;
+                                }
                             }
                             else if (name.EndsWith(".exe", StringComparison.OrdinalIgnoreCase) && exeUrl == null)
                             {
@@ -105,7 +110,8 @@ namespace EHelper.Services
                     }
                 }
 
-                result.DownloadUrl = zipUrl ?? exeUrl;
+                // Strictly prioritize zip package (~64 MB) over the uncompressed exe (~160 MB)
+                result.DownloadUrl = !string.IsNullOrEmpty(zipUrl) ? zipUrl : exeUrl;
             }
             catch (Exception ex)
             {
@@ -116,40 +122,75 @@ namespace EHelper.Services
         }
 
         /// <summary>
-        /// Downloads the latest release package (zip or exe), extracts the new executable,
-        /// launches a self-replacement script, and gracefully closes the current process.
-        /// The user experiences a quick seamless restart into the updated version.
+        /// Downloads the release package (prioritizing zip), reports download progress,
+        /// extracts the updated executable, triggers a robust self-replacement batch script,
+        /// and cleanly exits immediately so the updated application launches seamlessly.
         /// </summary>
-        public static async Task<bool> DownloadAndRestartAsync(string downloadUrl)
+        public static async Task<bool> DownloadAndRestartAsync(string downloadUrl, IProgress<(long bytesDownloaded, long? totalBytes, double percentage)>? progress = null)
         {
             if (string.IsNullOrWhiteSpace(downloadUrl)) return false;
 
             try
             {
                 string currentExePath = Environment.ProcessPath ?? Process.GetCurrentProcess().MainModule?.FileName ?? "";
-                if (string.IsNullOrEmpty(currentExePath) || !File.Exists(currentExePath))
+                if (string.IsNullOrEmpty(currentExePath) || !File.Exists(currentExePath) || Path.GetFileName(currentExePath).Equals("dotnet.exe", StringComparison.OrdinalIgnoreCase))
                 {
-                    // Fallback to entry assembly location
                     currentExePath = Path.Combine(AppContext.BaseDirectory, "E-Helper.exe");
                 }
 
                 string updateWorkDir = Path.Combine(Path.GetTempPath(), "EHelperUpdate_" + Guid.NewGuid().ToString("N"));
                 Directory.CreateDirectory(updateWorkDir);
 
-                string downloadedFilePath = Path.Combine(updateWorkDir, "package" + (downloadUrl.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) ? ".zip" : ".exe"));
+                bool isZip = downloadUrl.EndsWith(".zip", StringComparison.OrdinalIgnoreCase) || downloadUrl.Contains(".zip?", StringComparison.OrdinalIgnoreCase);
+                string downloadedFilePath = Path.Combine(updateWorkDir, "package" + (isZip ? ".zip" : ".exe"));
 
-                // Download the asset file
-                using (var downloadStream = await HttpClient.GetStreamAsync(downloadUrl))
-                using (var fileStream = new FileStream(downloadedFilePath, FileMode.Create, FileAccess.Write, FileShare.None))
+                // Download the asset with chunked progress reporting
+                using (var response = await HttpClient.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead))
                 {
-                    await downloadStream.CopyToAsync(fileStream);
+                    response.EnsureSuccessStatusCode();
+
+                    long? totalBytes = response.Content.Headers.ContentLength;
+
+                    using var downloadStream = await response.Content.ReadAsStreamAsync();
+                    using var fileStream = new FileStream(downloadedFilePath, FileMode.Create, FileAccess.Write, FileShare.None);
+
+                    byte[] buffer = new byte[81920]; // 80 KB
+                    long totalRead = 0;
+                    int bytesRead;
+
+                    while ((bytesRead = await downloadStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    {
+                        await fileStream.WriteAsync(buffer, 0, bytesRead);
+                        totalRead += bytesRead;
+
+                        if (totalBytes.HasValue && totalBytes.Value > 0)
+                        {
+                            double pct = Math.Min(100.0, (double)totalRead / totalBytes.Value * 100.0);
+                            progress?.Report((totalRead, totalBytes, pct));
+                        }
+                        else
+                        {
+                            progress?.Report((totalRead, null, 0));
+                        }
+                    }
+
+                    if (totalBytes.HasValue && totalBytes.Value > 0)
+                    {
+                        progress?.Report((totalBytes.Value, totalBytes, 100.0));
+                    }
                 }
 
                 string newExePath = "";
 
-                if (downloadedFilePath.EndsWith(".zip", StringComparison.OrdinalIgnoreCase))
+                if (isZip)
                 {
                     string extractDir = Path.Combine(updateWorkDir, "extracted");
+                    if (Directory.Exists(extractDir))
+                    {
+                        try { Directory.Delete(extractDir, true); } catch { }
+                    }
+                    Directory.CreateDirectory(extractDir);
+
                     ZipFile.ExtractToDirectory(downloadedFilePath, extractDir);
 
                     // Find the extracted E-Helper.exe
@@ -160,7 +201,6 @@ namespace EHelper.Services
                     }
                     else
                     {
-                        // Any exe in the extracted directory
                         string[] anyExes = Directory.GetFiles(extractDir, "*.exe", SearchOption.AllDirectories);
                         if (anyExes.Length > 0)
                         {
@@ -178,29 +218,63 @@ namespace EHelper.Services
                     return false;
                 }
 
-                // Create a batch script that waits for current process to exit, replaces the executable, and relaunches it
+                // Create a robust batch script that waits for current process to exit, replaces the executable, and relaunches it
                 int currentPid = Process.GetCurrentProcess().Id;
                 string scriptPath = Path.Combine(updateWorkDir, "update.bat");
 
                 string batContent = $@"@echo off
 chcp 65001 >nul
-timeout /t 1 /nobreak >nul
-:waitloop
-tasklist /fi ""PID eq {currentPid}"" 2>nul | find ""{currentPid}"" >nul
+
+set ""PID={currentPid}""
+set ""OLD_EXE={currentExePath}""
+set ""NEW_EXE={newExePath}""
+set ""WORK_DIR={updateWorkDir}""
+
+:: 1. Wait for process to exit
+set /a WAIT_COUNT=0
+:wait_proc
+tasklist /fi ""PID eq %PID%"" 2>nul | find ""%PID%"" >nul
 if not errorlevel 1 (
+    set /a WAIT_COUNT+=1
+    if %WAIT_COUNT% geq 4 (
+        taskkill /f /pid %PID% >nul 2>&1
+    )
     timeout /t 1 /nobreak >nul
-    goto waitloop
+    if %WAIT_COUNT% leq 12 goto wait_proc
 )
 
-copy /y ""{newExePath}"" ""{currentExePath}"" >nul
-if errorlevel 1 (
+:: Safety pause for OS file handle release
+timeout /t 1 /nobreak >nul
+
+:: 2. Robust copy retry loop (up to 30 attempts)
+set /a COPY_COUNT=0
+:copy_loop
+copy /y ""%NEW_EXE%"" ""%OLD_EXE%"" >nul 2>&1
+if not errorlevel 1 goto copy_success
+
+del /f /q ""%OLD_EXE%.old"" >nul 2>&1
+move /y ""%OLD_EXE%"" ""%OLD_EXE%.old"" >nul 2>&1
+copy /y ""%NEW_EXE%"" ""%OLD_EXE%"" >nul 2>&1
+if not errorlevel 1 goto copy_success
+
+set /a COPY_COUNT+=1
+if %COPY_COUNT% leq 30 (
     timeout /t 1 /nobreak >nul
-    copy /y ""{newExePath}"" ""{currentExePath}"" >nul
+    goto copy_loop
 )
 
-start """" ""{currentExePath}""
-timeout /t 2 /nobreak >nul
-rmdir /s /q ""{updateWorkDir}"" >nul 2>&1
+:copy_success
+:: Launch the updated application
+if exist ""%OLD_EXE%"" (
+    start """" ""%OLD_EXE%""
+) else (
+    start """" ""%NEW_EXE%""
+)
+
+:: Delay and cleanup
+timeout /t 3 /nobreak >nul
+del /f /q ""%OLD_EXE%.old"" >nul 2>&1
+rmdir /s /q ""%WORK_DIR%"" >nul 2>&1
 ";
 
                 File.WriteAllText(scriptPath, batContent);
@@ -210,22 +284,30 @@ rmdir /s /q ""{updateWorkDir}"" >nul 2>&1
                     FileName = "cmd.exe",
                     Arguments = $"/c \"\"{scriptPath}\"\"",
                     CreateNoWindow = true,
-                    UseShellExecute = false,
+                    UseShellExecute = true,
                     WorkingDirectory = Path.GetDirectoryName(currentExePath) ?? AppContext.BaseDirectory
                 };
 
                 Process.Start(psi);
 
-                // Gracefully shut down current application
+                // Gracefully shut down current application and terminate immediately
                 Application.Current.Dispatcher.Invoke(() =>
                 {
-                    if (Application.Current is App app)
+                    try
                     {
-                        app.ShutdownApp();
+                        if (Application.Current is App app)
+                        {
+                            app.ShutdownApp();
+                        }
+                        else
+                        {
+                            Application.Current.Shutdown();
+                        }
                     }
-                    else
+                    catch { }
+                    finally
                     {
-                        Application.Current.Shutdown();
+                        Environment.Exit(0);
                     }
                 });
 

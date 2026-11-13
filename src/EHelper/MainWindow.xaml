@@ -485,7 +485,7 @@
 
                     <Border Background="{DynamicResource BadgeBg}" BorderBrush="{DynamicResource BadgeBorder}" 
                             BorderThickness="1" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
-                        <TextBlock x:Name="TxtAppVersionPill" Text="v1.3.0" FontSize="10.5" FontWeight="SemiBold" 
+                        <TextBlock x:Name="TxtAppVersionPill" Text="v1.3.1" FontSize="10.5" FontWeight="SemiBold" 
                                    Foreground="{DynamicResource TextMuted}" TextWrapping="NoWrap"/>
                     </Border>
                 </StackPanel>
@@ -923,7 +923,7 @@
 
                     <!-- Middle: Title -->
                     <TextBlock Grid.Column="1" x:Name="TxtUpdateBannerMessage" 
-                               Text="v1.3.0 Güncellemesi Mevcut" FontSize="11" FontWeight="SemiBold" 
+                               Text="v1.3.1 Güncellemesi Mevcut" FontSize="11" FontWeight="SemiBold" 
                                Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" 
                                TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="0,0,8,0"/>
 

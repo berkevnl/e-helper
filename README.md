@@ -31,7 +31,7 @@ Inspired by the acclaimed **G-Helper** philosophy, E-Helper communicates directl
 
 ## 📊 OEM Control Center vs. E-Helper
 
-| Feature / Criterion | Official OEM Control Center | E-Helper (v1.3.0) |
+| Feature / Criterion | Official OEM Control Center | E-Helper (v1.3.1) |
 | :--- | :---: | :---: |
 | **RAM Footprint (Idle / System Tray)** | 150 MB – 350 MB (Often leaks up to 450 MB+) | **5 MB – 10 MB** |
 | **RAM Footprint (Active Window / Flyout)** | 250 MB – 500 MB | **30 MB – 50 MB** (Auto-trimmed via Working Set API) |
@@ -98,7 +98,7 @@ Inspired by the acclaimed **G-Helper** philosophy, E-Helper communicates directl
 
 ### 5. 🔄 Seamless In-App Auto-Updater
 * **Zero-Delay Startup Check:** Queries GitHub Releases silently in the background on startup with 0 ms impact on application launch.
-* **Interactive Status Indicator:** Displays version status in the bottom-left corner (`Version: 1.3.0` when up to date, red `Download: 1.2.0 → 1.3.0` when an update is available).
+* **Interactive Status Indicator:** Displays version status in the bottom-left corner (`Version: 1.3.1` when up to date, red `Download: 1.3.0 → 1.3.1` when an update is available).
 * **One-Click Self-Update:** Automatically downloads the latest standalone package, closes the running process, swaps the binary, and restarts the updated application instantly.
 
 ---

@@ -1538,7 +1538,7 @@ namespace EHelper
             {
                 // Update detected: display banner, hide "- Güncel" from footer
                 CardUpdateBanner.Visibility = Visibility.Visible;
-                string ver = _latestUpdateResult.LatestVersion ?? "v1.3.0";
+                string ver = _latestUpdateResult.LatestVersion ?? "v1.3.1";
                 if (!ver.StartsWith("v", StringComparison.OrdinalIgnoreCase))
                 {
                     ver = "v" + ver;
@@ -1565,7 +1565,32 @@ namespace EHelper
                 _isUpdating = true;
                 UpdateUpdateStatusUI();
 
-                bool success = await UpdateService.DownloadAndRestartAsync(_latestUpdateResult.DownloadUrl);
+                var progress = new Progress<(long bytesDownloaded, long? totalBytes, double percentage)>(p =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        if (CardUpdateBanner != null && TxtUpdateBannerMessage != null)
+                        {
+                            if (p.percentage >= 100.0)
+                            {
+                                TxtUpdateBannerMessage.Text = LocalizationManager.ExtractingStatus;
+                            }
+                            else if (p.totalBytes.HasValue && p.totalBytes.Value > 0)
+                            {
+                                double downloadedMb = p.bytesDownloaded / (1024.0 * 1024.0);
+                                double totalMb = p.totalBytes.Value / (1024.0 * 1024.0);
+                                TxtUpdateBannerMessage.Text = $"{LocalizationManager.DownloadingStatus} ({downloadedMb:0.#} / {totalMb:0.#} MB - %{p.percentage:0})";
+                            }
+                            else
+                            {
+                                double downloadedMb = p.bytesDownloaded / (1024.0 * 1024.0);
+                                TxtUpdateBannerMessage.Text = $"{LocalizationManager.DownloadingStatus} ({downloadedMb:0.#} MB)";
+                            }
+                        }
+                    });
+                });
+
+                bool success = await UpdateService.DownloadAndRestartAsync(_latestUpdateResult.DownloadUrl, progress);
                 if (!success)
                 {
                     _isUpdating = false;
