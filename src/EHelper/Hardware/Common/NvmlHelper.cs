@@ -1,5 +1,6 @@
 using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace EHelper.Hardware.Common
 {
@@ -17,35 +18,57 @@ namespace EHelper.Hardware.Common
         [DllImport("nvml.dll", EntryPoint = "nvmlDeviceGetFanSpeed")]
         private static extern int nvmlDeviceGetFanSpeed(IntPtr device, out uint fanSpeed);
 
+        [StructLayout(LayoutKind.Sequential)]
+        private struct NvmlUtilization
+        {
+            public uint Gpu;
+            public uint Memory;
+        }
+
+        [DllImport("nvml.dll", EntryPoint = "nvmlDeviceGetUtilizationRates")]
+        private static extern int nvmlDeviceGetUtilizationRates(IntPtr device, ref NvmlUtilization utilization);
+
+        [DllImport("nvml.dll", EntryPoint = "nvmlDeviceGetName")]
+        private static extern int nvmlDeviceGetName(IntPtr device, StringBuilder name, uint length);
+
         private static bool _initialized;
         private static IntPtr _deviceHandle = IntPtr.Zero;
         private static bool _dllMissing;
         private static int _initRetryCount;
+        private static string _cachedGpuName = "";
 
-        public static (uint Temp, uint FanPercent) GetGpuMetrics()
+        public static string GetCachedGpuName() => _cachedGpuName;
+
+        public static (uint Temp, uint FanPercent, uint GpuUsagePercent, string GpuName) GetGpuMetrics()
         {
-            if (_dllMissing) return (0, 0);
+            if (_dllMissing) return (0, 0, 0, _cachedGpuName);
 
             try
             {
                 if (!_initialized)
                 {
-                    // Allow retry on subsequent polls without overwhelming if persistently failing
                     if (_initRetryCount > 10 && (_initRetryCount % 5 != 0))
                     {
                         _initRetryCount++;
-                        return (0, 0);
+                        return (0, 0, 0, _cachedGpuName);
                     }
 
                     if (nvmlInit() == 0 && nvmlDeviceGetHandleByIndex(0, out _deviceHandle) == 0 && _deviceHandle != IntPtr.Zero)
                     {
                         _initialized = true;
                         _initRetryCount = 0;
+
+                        // Acquire GPU Name once
+                        var sb = new StringBuilder(128);
+                        if (nvmlDeviceGetName(_deviceHandle, sb, (uint)sb.Capacity) == 0)
+                        {
+                            _cachedGpuName = FormatGpuName(sb.ToString());
+                        }
                     }
                     else
                     {
                         _initRetryCount++;
-                        return (0, 0);
+                        return (0, 0, 0, _cachedGpuName);
                     }
                 }
 
@@ -53,6 +76,7 @@ namespace EHelper.Hardware.Common
                 {
                     uint temp = 0;
                     uint fan = 0;
+                    uint gpuUsage = 0;
 
                     int tempRes = nvmlDeviceGetTemperature(_deviceHandle, 0, out uint t);
                     if (tempRes == 0)
@@ -61,7 +85,6 @@ namespace EHelper.Hardware.Common
                     }
                     else if (tempRes is 15 or 999) // NVML_ERROR_GPU_IS_LOST / GPU asleep
                     {
-                        // Reset handle so it re-acquires once GPU wakes up from D3Cold
                         _initialized = false;
                         _deviceHandle = IntPtr.Zero;
                     }
@@ -69,7 +92,22 @@ namespace EHelper.Hardware.Common
                     if (nvmlDeviceGetFanSpeed(_deviceHandle, out uint f) == 0)
                         fan = f;
 
-                    return (temp, fan);
+                    var util = new NvmlUtilization();
+                    if (nvmlDeviceGetUtilizationRates(_deviceHandle, ref util) == 0)
+                    {
+                        gpuUsage = Math.Min(util.Gpu, 100);
+                    }
+
+                    if (string.IsNullOrEmpty(_cachedGpuName))
+                    {
+                        var sb = new StringBuilder(128);
+                        if (nvmlDeviceGetName(_deviceHandle, sb, (uint)sb.Capacity) == 0)
+                        {
+                            _cachedGpuName = FormatGpuName(sb.ToString());
+                        }
+                    }
+
+                    return (temp, fan, gpuUsage, _cachedGpuName);
                 }
             }
             catch (DllNotFoundException)
@@ -85,7 +123,17 @@ namespace EHelper.Hardware.Common
                 _initialized = false;
                 _deviceHandle = IntPtr.Zero;
             }
-            return (0, 0);
+
+            return (0, 0, 0, _cachedGpuName);
+        }
+
+        private static string FormatGpuName(string raw)
+        {
+            if (string.IsNullOrWhiteSpace(raw)) return "RTX 4070";
+
+            string s = raw.Replace("NVIDIA ", "").Replace("GeForce ", "").Replace(" Laptop GPU", "").Replace(" Graphics", "").Trim();
+            if (s.Length > 16) s = s.Substring(0, 16);
+            return s;
         }
     }
 }

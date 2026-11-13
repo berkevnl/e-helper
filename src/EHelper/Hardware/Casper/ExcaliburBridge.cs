@@ -15,6 +15,7 @@ namespace EHelper.Hardware.Casper
         private readonly object _syncLock = new();
         private ManagementObject? _wmiInstance;
         private bool _isDisposed;
+        private LedMode _activeMode = LedMode.Off;
 
         public string VendorName => "Casper";
         public string DeviceModel { get; private set; }
@@ -290,15 +291,17 @@ namespace EHelper.Hardware.Casper
         {
             if (mode == LedMode.Off || brightness == 0)
             {
+                _activeMode = LedMode.Off;
                 return TurnOffAllLights();
             }
 
-            // Prime the EC controller PWM if switching into breathing, cycle, dynamic, or rainbow modes
-            if (mode == LedMode.Breathing || mode == LedMode.Cycle || mode == LedMode.ColorfulCycle || mode == LedMode.Rainbow)
+            // Only prime the EC PWM when first transitioning into Cycle, Dynamic or Rainbow, NEVER for Breathing or when already in the mode
+            if (_activeMode != mode && (mode == LedMode.Cycle || mode == LedMode.ColorfulCycle || mode == LedMode.Rainbow))
             {
                 SetLed(LedZone.All, LedMode.Static, brightness, r, g, b);
                 SetLed(LedZone.AllKeyboard, LedMode.Static, brightness, r, g, b);
             }
+            _activeMode = mode;
 
             // Set Zone 0 (Master), Zone 6 (ALLKBLED), and individual zones (3, 4, 5) to ensure EC wakes up
             bool res0 = SetLed(LedZone.All, mode, brightness, r, g, b);

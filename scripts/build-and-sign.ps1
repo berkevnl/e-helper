@@ -97,16 +97,15 @@ if ($Sign -and -not $SkipSign) {
 $appVersion = ($projXml.Project.PropertyGroup | Where-Object { $_.Version }).Version
 if (-not $appVersion) { $appVersion = "1.0.0" }
 $zipPath = "$StandaloneDir\E-Helper-v$appVersion-win-x64.zip"
-$genericZipPath = "$StandaloneDir\E-Helper-win-x64.zip"
 Write-Host "==> Creating Standalone Release ZIP: $zipPath" -ForegroundColor Cyan
 if (Test-Path $zipPath) { Remove-Item -Force $zipPath }
-if (Test-Path $genericZipPath) { Remove-Item -Force $genericZipPath }
 
 Compress-Archive -Path $StandaloneExe -DestinationPath $zipPath -Force
-Copy-Item $zipPath $genericZipPath -Force
+
+# Clean any extra zip files in Standalone directory to keep only the executable and versioned zip
+Get-ChildItem -Path $StandaloneDir -Filter "*.zip" | Where-Object { $_.FullName -ne $zipPath } | Remove-Item -Force -ErrorAction SilentlyContinue
 
 Write-Host "==> Build & Digital Signing complete!" -ForegroundColor Green
 Write-Host "    Standalone Output: $StandaloneExe"
 Write-Host "    Standalone ZIP:    $zipPath"
-Write-Host "    Generic ZIP:       $genericZipPath"
 Write-Host "    Framework Output:  $FrameworkExe"

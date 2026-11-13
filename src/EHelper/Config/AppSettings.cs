@@ -29,6 +29,8 @@ namespace EHelper.Config
         public int PollingIntervalSeconds { get; set; } = 3;
         public bool IsDarkTheme { get; set; } = true;
         public string Language { get; set; } = "TR";
+        public string ThemeAccentColor { get; set; } = "#22D3EE";
+        public System.Collections.Generic.List<AppProfile> Profiles { get; set; } = new();
 
         [JsonIgnore]
         public string HexColor => $"#{Red:X2}{Green:X2}{Blue:X2}";

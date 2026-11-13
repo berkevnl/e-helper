@@ -6,15 +6,16 @@
         xmlns:local="clr-namespace:EHelper"
         mc:Ignorable="d"
         Title="E-Helper"
-        Icon="/Assets/app.ico"
-        Height="660" 
-        Width="425"
+        Icon="pack://application:,,,/E-Helper;component/Assets/app.ico"
+        SizeToContent="Height"
+        Width="435"
         WindowStyle="None"
         AllowsTransparency="True"
         Background="Transparent"
         ShowInTaskbar="False"
         Topmost="True"
         ResizeMode="NoResize"
+        WindowStartupLocation="Manual"
         FontFamily="Google Sans, Inter, Roboto, Segoe UI Variable Display, Segoe UI, sans-serif"
         UseLayoutRounding="True"
         SnapsToDevicePixels="True"
@@ -26,303 +27,331 @@
         MouseLeftButtonDown="Window_MouseLeftButtonDown">
 
     <Window.Resources>
-        <!-- Crisp Vector Icon Geometries (Zero-RAM Overhead, Lucide / Modern System Icons) -->
-        <Geometry x:Key="IconGauge">M12,15 A3,3 0 1,0 12,9 A3,3 0 0,0 12,15 M12,15 L15.5,11.5 M3.34,19 A10,10 0 1,1 20.66,19</Geometry>
+        <!-- Vector Icon Geometries -->
         <Geometry x:Key="IconEco">M11,20 A7,7 0 0,1 9.8,6.1 C15.5,5 17,4.48 19,2 C20,4 21,6.18 21,10 C21,15.5 16.22,20 11,20 Z M2,21 C2,18 3.85,15.64 7.08,15 C9.5,14.52 12,13 13,12</Geometry>
         <Geometry x:Key="IconBalanced">M4,21 L4,14 M4,10 L4,3 M12,21 L12,12 M12,8 L12,3 M20,21 L20,16 M20,12 L20,3 M1,14 L7,14 M9,8 L15,8 M17,16 L23,16</Geometry>
         <Geometry x:Key="IconTurbo">M8.5,14.5 A2.5,2.5 0 0,0 11,12 C11,10.62 10.5,10 10,9 C8.93,6.86 9.78,4.95 12,3 C12.5,5.5 14,7.9 16,9.5 C18,11.1 19,13 19,15 A7,7 0 1,1 5,15 C5,13.85 5.43,12.7 6,12 A2.5,2.5 0 0,0 8.5,14.5 Z</Geometry>
-        <Geometry x:Key="IconChip">M4,4 L20,4 L20,20 L4,20 Z M9,9 L15,9 L15,15 L9,15 Z M9,1 L9,4 M15,1 L15,4 M9,20 L9,23 M15,20 L15,23 M1,9 L4,9 M1,15 L4,15 M20,9 L23,9 M20,15 L23,15</Geometry>
-        <Geometry x:Key="IconActivity">M22,12 L18,12 L15,21 L9,3 L6,12 L2,12</Geometry>
+        <Geometry x:Key="IconFanMini">M12,12 A2.5,2.5 0 1,0 12,9.5 A2.5,2.5 0 0,0 12,12 M12,9.5 C12,5 15,3 17,4 C19,5 17,9 12,9.5 M14.5,12 C19,12 21,15 20,17 C19,19 15,17 14.5,12 M12,14.5 C12,19 9,21 7,20 C5,19 7,15 12,14.5 M9.5,12 C5,12 3,9 4,7 C5,5 9,7 9.5,12</Geometry>
+        <Geometry x:Key="IconRam">M4,4 L20,4 L20,20 L4,20 Z M9,9 L15,9 L15,15 L9,15 Z M9,1 L9,4 M15,1 L15,4 M9,20 L9,23 M15,20 L15,23 M1,9 L4,9 M1,15 L4,15 M20,9 L23,9 M20,15 L23,15</Geometry>
+        <Geometry x:Key="IconDisk">M4,6 C4,4.9 4.9,4 6,4 L18,4 C19.1,4 20,4.9 20,6 L20,18 C20,19.1 19.1,20 18,20 L6,20 C4.9,20 4,19.1 4,18 Z M4,14 L20,14 M16,17 A1,1 0 1,0 16,15 A1,1 0 0,0 16,17</Geometry>
         <Geometry x:Key="IconKeyboard">M2,6 C2,4.9 2.9,4 4,4 L20,4 C21.1,4 22,4.9 22,6 L22,18 C22,19.1 21.1,20 20,20 L4,20 C2.9,20 2,19.1 2,18 Z M6,8 L8,8 M11,8 L13,8 M16,8 L18,8 M6,12 L8,12 M16,12 L18,12 M10,12 L14,12 M6,16 L18,16</Geometry>
-        <Geometry x:Key="IconSun">M12,7 A5,5 0 1,0 12,17 A5,5 0 0,0 12,7 M12,1 L12,4 M12,20 L12,23 M4.22,4.22 L6.34,6.34 M17.66,17.66 L19.78,19.78 M1,12 L4,12 M20,12 L23,12 M4.22,19.78 L6.34,17.66 M17.66,6.34 L19.78,4.22</Geometry>
+        <Geometry x:Key="IconPalette">M12,2 C6.5,2 2,6.5 2,12 C2,17.5 6.5,22 12,22 C13.1,22 14,21.1 14,20 C14,19.5 13.8,19 13.5,18.6 C13.2,18.2 13,17.6 13,17 C13,15.9 13.9,15 15,15 L17,15 C19.8,15 22,12.8 22,10 C22,5.6 17.5,2 12,2 Z M6.5,11.5 C5.7,11.5 5,10.8 5,10 C5,9.2 5.7,8.5 6.5,8.5 C7.3,8.5 8,9.2 8,10 C8,10.8 7.3,11.5 6.5,11.5 Z M9.5,7.5 C8.7,7.5 8,6.8 8,6 C8,5.2 8.7,4.5 9.5,4.5 C10.3,4.5 11,5.2 11,6 C11,6.8 10.3,7.5 9.5,7.5 Z M14.5,7.5 C13.7,7.5 13,6.8 13,6 C13,5.2 13.7,4.5 14.5,4.5 C15.3,4.5 16,5.2 16,6 C16,6.8 15.3,7.5 14.5,7.5 Z M17.5,11.5 C16.7,11.5 16,10.8 16,10 C16,9.2 16.7,8.5 17.5,8.5 C18.3,8.5 19,9.2 19,10 C19,10.8 18.3,11.5 17.5,11.5 Z</Geometry>
+        <Geometry x:Key="IconInfo">M12,2 A10,10 0 1,0 22,12 A10,10 0 0,0 12,2 M12,16 L12,12 M12,8 L12.01,8</Geometry>
+        <Geometry x:Key="IconSettings">M12,15 A3,3 0 1,0 12,9 A3,3 0 0,0 12,15 M19.4,15 A1.65,1.65 0 0,0 19.73,16.82 L19.79,16.88 A2,2 0 1,1 16.96,19.71 L16.9,19.65 A1.65,1.65 0 0,0 15.08,19.32 A1.65,1.65 0 0,0 14,20.88 L14,21 A2,2 0 1,1 10,21 L10,20.88 A1.65,1.65 0 0,0 8.92,19.32 A1.65,1.65 0 0,0 7.1,19.65 L7.04,19.71 A2,2 0 1,1 4.21,16.88 L4.27,16.82 A1.65,1.65 0 0,0 4.6,15 A1.65,1.65 0 0,0 3.04,13.92 L2.92,13.92 A2,2 0 1,1 2.92,9.92 L3.04,9.92 A1.65,1.65 0 0,0 4.6,8.84 A1.65,1.65 0 0,0 4.27,7.02 L4.21,6.96 A2,2 0 1,1 7.04,4.13 L7.1,4.19 A1.65,1.65 0 0,0 8.92,4.52 A1.65,1.65 0 0,0 10,2.96 L10,2.84 A2,2 0 1,1 14,2.84 L14,2.96 A1.65,1.65 0 0,0 15.08,4.52 A1.65,1.65 0 0,0 16.9,4.19 L16.96,4.13 A2,2 0 1,1 19.79,6.96 L19.73,7.02 A1.65,1.65 0 0,0 19.4,8.84 A1.65,1.65 0 0,0 20.96,9.92 L21.08,9.92 A2,2 0 1,1 21.08,13.92 L20.96,13.92 A1.65,1.65 0 0,0 19.4,15 Z</Geometry>
+        <Geometry x:Key="IconSun">M 12,8 A 4,4 0 1,0 12,16 A 4,4 0 0,0 12,8 Z M 12,1.5 L 12,4.5 M 12,19.5 L 12,22.5 M 1.5,12 L 4.5,12 M 19.5,12 L 22.5,12 M 4.5,4.5 L 6.6,6.6 M 19.5,4.5 L 17.4,6.6 M 4.5,19.5 L 6.6,17.4 M 19.5,19.5 L 17.4,17.4</Geometry>
         <Geometry x:Key="IconMoon">M21,12.79 A9,9 0 1,1 11.21,3 A7,7 0 0,0 21,12.79 Z</Geometry>
         <Geometry x:Key="IconGlobe">M12,2 A10,10 0 1,0 22,12 A10,10 0 0,0 12,2 M2,12 L22,12 M12,2 C14.5,5 16,8.5 16,12 C16,15.5 14.5,19 12,22 C9.5,19 8,15.5 8,12 C8,8.5 9.5,5 12,2</Geometry>
         <Geometry x:Key="IconPower">M9,21 L5,21 C3.9,21 3,20.1 3,19 L3,5 C3,3.9 3.9,3 5,3 L9,3 M16,17 L21,12 L16,7 M21,12 L9,12</Geometry>
 
-        <!-- Lighting Mode Geometries (Uniform 24x24 Vector Symbols) -->
+        <!-- Lighting Mode Icons -->
+        <Geometry x:Key="IconModeRainbow">M3,18 A9,9 0 0,1 21,18 M7,18 A5,5 0 0,1 17,18 M10,18 A2,2 0 0,1 14,18</Geometry>
+        <Geometry x:Key="IconModeCycle">M21,12 A9,9 0 1,1 18.36,5.64 L21,8 M21,3 L21,8 L16,8</Geometry>
         <Geometry x:Key="IconModeStatic">M12,2 L14.5,8.5 L21,11 L14.5,13.5 L12,20 L9.5,13.5 L3,11 L9.5,8.5 Z</Geometry>
         <Geometry x:Key="IconModeBreathing">M2,12 C5,6 9,6 12,12 C15,18 19,18 22,12</Geometry>
         <Geometry x:Key="IconModeDynamic">M13,2 L4,13 L11,13 L10,22 L19,11 L12,11 Z</Geometry>
-        <Geometry x:Key="IconModeCycle">M21,12 A9,9 0 1,1 18.36,5.64 L21,8 M21,3 L21,8 L16,8</Geometry>
-        <Geometry x:Key="IconModeRainbow">M3,18 A9,9 0 0,1 21,18 M7,18 A5,5 0 0,1 17,18 M10,18 A2,2 0 0,1 14,18</Geometry>
         <Geometry x:Key="IconModeTripleZone">M3,6 C3,4.9 3.9,4 5,4 L19,4 C20.1,4 21,4.9 21,6 L21,18 C21,19.1 20.1,20 19,20 L5,20 C3.9,20 3,19.1 3,18 Z M9,4 L9,20 M15,4 L15,20</Geometry>
 
-        <!-- Dynamic Theme Tokens (Default: G-Helper Authentic Matte Dark) -->
-        <SolidColorBrush x:Key="WindowBg" Color="#161616"/>
-        <SolidColorBrush x:Key="TileBg" Color="#252525"/>
-        <SolidColorBrush x:Key="TileHoverBg" Color="#323232"/>
-        <SolidColorBrush x:Key="TileBorder" Color="#383838"/>
-        <SolidColorBrush x:Key="TileActiveBg" Color="#192738"/>
-        <SolidColorBrush x:Key="TileActiveBorder" Color="#0090FF"/>
+        <!-- Theme Tokens (Default: Matching Reference Image Palette) -->
+        <SolidColorBrush x:Key="WindowBg" Color="#14151B"/>
+        <SolidColorBrush x:Key="CardBg" Color="#1C1E26"/>
+        <SolidColorBrush x:Key="CardHoverBg" Color="#222530"/>
+        <SolidColorBrush x:Key="CardBorder" Color="#252834"/>
+        <SolidColorBrush x:Key="CardActiveBg" Color="#252834"/>
+        <SolidColorBrush x:Key="CardActiveBorder" Color="#4C536A"/>
         <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
-        <SolidColorBrush x:Key="TextSecondary" Color="#CCCCCC"/>
-        <SolidColorBrush x:Key="TextMuted" Color="#8E8E93"/>
-        <SolidColorBrush x:Key="ProgressTrack" Color="#2A2A2A"/>
-        <SolidColorBrush x:Key="AccentBlue" Color="#0090FF"/>
-        <SolidColorBrush x:Key="AccentGreen" Color="#22C55E"/>
-        <SolidColorBrush x:Key="DangerRed" Color="#EF4444"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#D4D7E2"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#656A7B"/>
+        <SolidColorBrush x:Key="ProgressTrack" Color="#252834"/>
+        <SolidColorBrush x:Key="AccentColor" Color="#22D3EE"/>
+        <SolidColorBrush x:Key="AccentCyan" Color="#22D3EE"/>
+        <SolidColorBrush x:Key="AccentGreen" Color="#4ADE80"/>
+        <SolidColorBrush x:Key="AccentAmber" Color="#F59E0B"/>
+        <SolidColorBrush x:Key="SegmentBg" Color="#1E202A"/>
+        <SolidColorBrush x:Key="SegmentBorder" Color="#2E3242"/>
+        <SolidColorBrush x:Key="SegmentActiveBg" Color="#252834"/>
+        <SolidColorBrush x:Key="SegmentActiveBorder" Color="#4C536A"/>
+        <SolidColorBrush x:Key="BadgeBg" Color="#22242F"/>
+        <SolidColorBrush x:Key="BadgeBorder" Color="#2D313F"/>
+        <SolidColorBrush x:Key="BtnUpdateBg" Color="#2A2E3D"/>
+        <SolidColorBrush x:Key="BtnUpdateBorder" Color="#4C536A"/>
+        <SolidColorBrush x:Key="BtnUpdateFg" Color="#FFFFFF"/>
 
-        <!-- G-Helper Square Tile Button Style with Soft Micro-interaction -->
-        <Style x:Key="GHelperTileStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource TileBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource TileBorder}"/>
+        <!-- Modern ScrollBar Thumb Style -->
+        <Style x:Key="ModernScrollBarThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="true"/>
+            <Setter Property="IsTabStop" Value="false"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Border CornerRadius="3" Background="{DynamicResource SegmentBorder}" Margin="1,0"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter Property="Background" Value="{DynamicResource CardActiveBorder}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Vertical ScrollBar Style -->
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Track x:Name="PART_Track" IsDirectionReversed="true">
+                            <Track.Thumb>
+                                <Thumb Style="{StaticResource ModernScrollBarThumb}"/>
+                            </Track.Thumb>
+                        </Track>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Progress Bar Style (Theme Accent Color Fill) -->
+        <Style x:Key="ModernProgressBarStyle" TargetType="ProgressBar">
+            <Setter Property="Height" Value="6"/>
+            <Setter Property="Background" Value="{DynamicResource ProgressTrack}"/>
+            <Setter Property="Foreground" Value="{DynamicResource AccentColor}"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ProgressBar">
+                        <Grid x:Name="TemplateRoot" SnapsToDevicePixels="True">
+                            <Border x:Name="PART_Track" Background="{TemplateBinding Background}" CornerRadius="3"/>
+                            <Border x:Name="PART_Indicator" HorizontalAlignment="Left" Background="{TemplateBinding Foreground}" CornerRadius="3"/>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Segmented Button Style -->
+        <Style x:Key="SegmentButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource SegmentBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SegmentBorder}"/>
             <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="4,0"/>
             <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="Padding" Value="8,10"/>
-            <Setter Property="HorizontalContentAlignment" Value="Center"/>
-            <Setter Property="VerticalContentAlignment" Value="Center"/>
             <Setter Property="Template">
                 <Setter.Value>
                     <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="5">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CardHoverBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Power Card Button Style -->
+        <Style x:Key="PowerCardButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="68"/>
+            <Setter Property="Background" Value="{DynamicResource CardBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="8">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CardHoverBg}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Update Action Button Style -->
+        <Style x:Key="UpdateActionButtonStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource BtnUpdateBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource BtnUpdateFg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource BtnUpdateBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" Padding="{TemplateBinding Padding}" CornerRadius="6">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Window Control Button (Minimize & Close) -->
+        <Style x:Key="WindowCtrlBtnStyle" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CardHoverBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Footer Icon Button Style -->
+        <Style x:Key="FooterIconBtnStyle" TargetType="Button">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="MinWidth" Value="28"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CardHoverBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Footer Exit Button Style -->
+        <Style x:Key="FooterExitBtnStyle" TargetType="Button">
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="MinWidth" Value="68"/>
+            <Setter Property="Padding" Value="8,0"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CardHoverBg}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Fluid Modern ComboBox Style -->
+        <Style x:Key="ModernComboBoxStyle" TargetType="ComboBox">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Background" Value="{DynamicResource SegmentBg}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource SegmentBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="34"/>
+            <Setter Property="FontSize" Value="11.5"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ComboBox">
                         <Grid>
                             <Border x:Name="border"
                                     Background="{TemplateBinding Background}"
                                     BorderBrush="{TemplateBinding BorderBrush}"
                                     BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="4"/>
-                            <Border x:Name="hoverGlow"
-                                    Background="{DynamicResource TileHoverBg}"
-                                    BorderBrush="{TemplateBinding BorderBrush}"
-                                    BorderThickness="{TemplateBinding BorderThickness}"
-                                    CornerRadius="4"
-                                    Opacity="0"/>
-                            <ContentPresenter Margin="{TemplateBinding Padding}"
-                                              HorizontalAlignment="{TemplateBinding HorizontalContentAlignment}" 
-                                              VerticalAlignment="{TemplateBinding VerticalContentAlignment}"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="hoverGlow"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="1" Duration="0:0:0.16"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="hoverGlow"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="0" Duration="0:0:0.16"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.82"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Active Selected Tile Style (Crisp Electric Blue Border) -->
-        <Style x:Key="ActiveGHelperTileStyle" TargetType="Button" BasedOn="{StaticResource GHelperTileStyle}">
-            <Setter Property="Background" Value="{DynamicResource TileActiveBg}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource TileActiveBorder}"/>
-            <Setter Property="BorderThickness" Value="2"/>
-        </Style>
-
-        <!-- Compact Bottom Action Button Style with Soft Micro-interaction -->
-        <Style x:Key="FooterBtnStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource TileBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource TileBorder}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="8,6"/>
-            <Setter Property="FontSize" Value="11"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
-                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4"/>
-                            <Border x:Name="hoverGlow" Background="{DynamicResource TileHoverBg}" BorderBrush="{TemplateBinding BorderBrush}" 
-                                    BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4" Opacity="0"/>
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Trigger.EnterActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="hoverGlow"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="1" Duration="0:0:0.16"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.EnterActions>
-                                <Trigger.ExitActions>
-                                    <BeginStoryboard>
-                                        <Storyboard>
-                                            <DoubleAnimation Storyboard.TargetName="hoverGlow"
-                                                             Storyboard.TargetProperty="Opacity"
-                                                             To="0" Duration="0:0:0.16"/>
-                                        </Storyboard>
-                                    </BeginStoryboard>
-                                </Trigger.ExitActions>
-                            </Trigger>
-                            <Trigger Property="IsPressed" Value="True">
-                                <Setter Property="Opacity" Value="0.82"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Mini Button Style for side-by-side Theme & Lang -->
-        <Style x:Key="FooterMiniBtnStyle" TargetType="Button">
-            <Setter Property="Background" Value="{DynamicResource TileBg}"/>
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="BorderBrush" Value="{DynamicResource TileBorder}"/>
-            <Setter Property="BorderThickness" Value="1"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Padding" Value="2,3"/>
-            <Setter Property="FontSize" Value="10"/>
-            <Setter Property="Height" Value="23"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
-                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="4">
-                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" Margin="{TemplateBinding Padding}"/>
-                        </Border>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{DynamicResource TileHoverBg}"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <!-- Mini Color Preset Button -->
-        <Style x:Key="ColorPresetButtonStyle" TargetType="Button">
-            <Setter Property="Width" Value="20"/>
-            <Setter Property="Height" Value="20"/>
-            <Setter Property="Margin" Value="2"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="Button">
-                        <Grid>
-                            <Rectangle Fill="{TemplateBinding Background}" RadiusX="3" RadiusY="3" Stroke="#444444" StrokeThickness="1"/>
-                            <Rectangle x:Name="highlight" RadiusX="3" RadiusY="3" Stroke="White" StrokeThickness="1.5" Opacity="0"/>
-                        </Grid>
-                        <ControlTemplate.Triggers>
-                            <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="highlight" Property="Opacity" Value="1"/>
-                            </Trigger>
-                        </ControlTemplate.Triggers>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-        <!-- Modern G-Helper Flat ComboBox Style -->
-        <ControlTemplate x:Key="ComboBoxToggleButtonTemplate" TargetType="ToggleButton">
-            <Border x:Name="border"
-                    Background="{DynamicResource TileBg}"
-                    BorderBrush="{DynamicResource TileBorder}"
-                    BorderThickness="1"
-                    CornerRadius="4">
-                <Grid>
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="24"/>
-                    </Grid.ColumnDefinitions>
-                    <Path x:Name="Arrow"
-                          Grid.Column="1"
-                          Data="M 0 0 L 4 4 L 8 0 Z"
-                          Fill="{DynamicResource TextMuted}"
-                          HorizontalAlignment="Center"
-                          VerticalAlignment="Center"/>
-                </Grid>
-            </Border>
-            <ControlTemplate.Triggers>
-                <Trigger Property="IsMouseOver" Value="True">
-                    <Setter TargetName="border" Property="Background" Value="{DynamicResource TileHoverBg}"/>
-                    <Setter TargetName="Arrow" Property="Fill" Value="{DynamicResource TextPrimary}"/>
-                </Trigger>
-                <Trigger Property="IsChecked" Value="True">
-                    <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource TileActiveBorder}"/>
-                </Trigger>
-            </ControlTemplate.Triggers>
-        </ControlTemplate>
-
-        <Style x:Key="GHelperComboBoxStyle" TargetType="ComboBox">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Height" Value="32"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="UseLayoutRounding" Value="True"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBox">
-                        <Grid>
-                            <ToggleButton x:Name="ToggleButton"
-                                          Template="{StaticResource ComboBoxToggleButtonTemplate}"
+                                    CornerRadius="6">
+                                <Grid Margin="{TemplateBinding Padding}">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*"/>
+                                        <ColumnDefinition Width="Auto"/>
+                                    </Grid.ColumnDefinitions>
+                                    <ContentPresenter Grid.Column="0" 
+                                                      Content="{TemplateBinding SelectionBoxItem}"
+                                                      ContentTemplate="{TemplateBinding SelectionBoxItemTemplate}"
+                                                      HorizontalAlignment="Left"
+                                                      VerticalAlignment="Center"/>
+                                    <Path Grid.Column="1" Data="M0,0 L4,4 L8,0" Stroke="{DynamicResource TextMuted}" 
+                                          StrokeThickness="1.5" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="6,0,2,0"/>
+                                </Grid>
+                            </Border>
+                            <ToggleButton x:Name="toggle"
+                                          Background="Transparent"
+                                          BorderBrush="Transparent"
                                           Focusable="False"
-                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}"
-                                          ClickMode="Press"/>
-                            <ContentPresenter x:Name="ContentSite"
-                                              IsHitTestVisible="False"
-                                              Content="{TemplateBinding SelectionBoxItem}"
-                                              Margin="10,0,24,0"
-                                              VerticalAlignment="Center"
-                                              HorizontalAlignment="Left"/>
-                            <Popup x:Name="Popup"
-                                   Placement="Bottom"
-                                   IsOpen="{TemplateBinding IsDropDownOpen}"
-                                   AllowsTransparency="True"
-                                   Focusable="False"
-                                   PopupAnimation="Slide">
-                                <Border x:Name="DropDownBorder"
-                                        Background="{DynamicResource WindowBg}"
-                                        BorderBrush="{DynamicResource TileBorder}"
+                                          IsChecked="{Binding IsDropDownOpen, Mode=TwoWay, RelativeSource={RelativeSource TemplatedParent}}">
+                                <ToggleButton.Template>
+                                    <ControlTemplate TargetType="ToggleButton">
+                                        <Border Background="Transparent"/>
+                                    </ControlTemplate>
+                                </ToggleButton.Template>
+                            </ToggleButton>
+                            <Popup x:Name="PART_Popup" AllowsTransparency="True" IsOpen="{TemplateBinding IsDropDownOpen}" 
+                                   Placement="Bottom" PopupAnimation="Fade">
+                                <Border Background="{DynamicResource CardBg}"
+                                        BorderBrush="{DynamicResource CardBorder}"
                                         BorderThickness="1"
-                                        CornerRadius="4"
-                                        Margin="0,2,0,4"
-                                        MinWidth="{Binding ActualWidth, ElementName=ToggleButton}">
-                                    <ScrollViewer Margin="2" SnapsToDevicePixels="True">
-                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained"/>
+                                        CornerRadius="6"
+                                        MinWidth="{TemplateBinding ActualWidth}"
+                                        Margin="0,4,0,0">
+                                    <Border.Effect>
+                                        <DropShadowEffect BlurRadius="16" ShadowDepth="4" Direction="270" Color="#000000" Opacity="0.4"/>
+                                    </Border.Effect>
+                                    <ScrollViewer MaxHeight="200" VerticalScrollBarVisibility="Auto">
+                                        <StackPanel IsItemsHost="True" KeyboardNavigation.DirectionalNavigation="Contained" Margin="2"/>
                                     </ScrollViewer>
                                 </Border>
                             </Popup>
                         </Grid>
-                    </ControlTemplate>
-                </Setter.Value>
-            </Setter>
-        </Style>
-
-        <Style x:Key="GHelperComboBoxItemStyle" TargetType="ComboBoxItem">
-            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
-            <Setter Property="FontSize" Value="12"/>
-            <Setter Property="Padding" Value="10,6"/>
-            <Setter Property="Cursor" Value="Hand"/>
-            <Setter Property="Template">
-                <Setter.Value>
-                    <ControlTemplate TargetType="ComboBoxItem">
-                        <Border x:Name="b" Background="Transparent" CornerRadius="3" Padding="{TemplateBinding Padding}">
-                            <ContentPresenter VerticalAlignment="Center"/>
-                        </Border>
                         <ControlTemplate.Triggers>
                             <Trigger Property="IsMouseOver" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{DynamicResource TileHoverBg}"/>
-                            </Trigger>
-                            <Trigger Property="IsSelected" Value="True">
-                                <Setter TargetName="b" Property="Background" Value="{DynamicResource TileActiveBg}"/>
-                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource TileActiveBorder}"/>
-                                <Setter TargetName="b" Property="BorderThickness" Value="1"/>
+                                <Setter TargetName="border" Property="BorderBrush" Value="{DynamicResource CardActiveBorder}"/>
                             </Trigger>
                         </ControlTemplate.Triggers>
                     </ControlTemplate>
@@ -330,514 +359,638 @@
             </Setter>
         </Style>
 
-        <!-- Modern Filled Track Slider Style (G-Helper / Windows 11 style) -->
-        <Style x:Key="ModernBrightnessSliderStyle" TargetType="Slider">
+        <!-- ComboBoxItem Style -->
+        <Style x:Key="ModernComboBoxItemStyle" TargetType="ComboBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="HorizontalContentAlignment" Value="Left"/>
+            <Setter Property="VerticalContentAlignment" Value="Center"/>
+            <Setter Property="Cursor" Value="Hand"/>
             <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
-            <Setter Property="SnapsToDevicePixels" Value="True"/>
-            <Setter Property="UseLayoutRounding" Value="True"/>
-            <Setter Property="IsMoveToPointEnabled" Value="True"/>
             <Setter Property="Template">
                 <Setter.Value>
-                    <ControlTemplate TargetType="Slider">
-                        <Grid VerticalAlignment="Center" Height="22" Background="Transparent">
-                            <!-- Background Full Track (Dark Gray) -->
-                            <Border Height="4" Margin="6,0,6,0" Background="{DynamicResource ProgressTrack}" CornerRadius="2" VerticalAlignment="Center"/>
-                            
-                            <!-- Track Layer with Thumb and Decrease Button (Filled Blue) -->
-                            <Track x:Name="PART_Track">
-                                <Track.DecreaseRepeatButton>
-                                    <RepeatButton Command="Slider.DecreaseLarge" Focusable="False" Height="4" Margin="6,0,0,0" VerticalAlignment="Center">
-                                        <RepeatButton.Template>
-                                            <ControlTemplate TargetType="RepeatButton">
-                                                <Border Background="{DynamicResource AccentBlue}" CornerRadius="2"/>
-                                            </ControlTemplate>
-                                        </RepeatButton.Template>
-                                    </RepeatButton>
-                                </Track.DecreaseRepeatButton>
-                                <Track.Thumb>
-                                    <Thumb Focusable="False" Width="14" Height="14" Cursor="Hand">
-                                        <Thumb.Template>
-                                            <ControlTemplate TargetType="Thumb">
-                                                <Border Width="14" Height="14" CornerRadius="7" 
-                                                        Background="{DynamicResource TextPrimary}" 
-                                                        BorderBrush="{DynamicResource AccentBlue}" BorderThickness="2">
-                                                    <Border.Effect>
-                                                        <DropShadowEffect BlurRadius="4" ShadowDepth="1" Opacity="0.4" Color="#000000"/>
-                                                    </Border.Effect>
-                                                </Border>
-                                            </ControlTemplate>
-                                        </Thumb.Template>
-                                    </Thumb>
-                                </Track.Thumb>
-                                <Track.IncreaseRepeatButton>
-                                    <RepeatButton Command="Slider.IncreaseLarge" Focusable="False" Height="4" VerticalAlignment="Center">
-                                        <RepeatButton.Template>
-                                            <ControlTemplate TargetType="RepeatButton">
-                                                <Border Background="Transparent"/>
-                                            </ControlTemplate>
-                                        </RepeatButton.Template>
-                                    </RepeatButton>
-                                </Track.IncreaseRepeatButton>
-                            </Track>
-                        </Grid>
+                    <ControlTemplate TargetType="ComboBoxItem">
+                        <Border x:Name="itemBorder" Background="{TemplateBinding Background}" CornerRadius="4" Margin="2,1">
+                            <ContentPresenter Margin="{TemplateBinding Padding}" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource CardHoverBg}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="itemBorder" Property="Background" Value="{DynamicResource CardActiveBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentCyan}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+        <!-- Profile Banner Action Buttons -->
+        <Style x:Key="ProfileBannerBtnCancel" TargetType="Button">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CardBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <Style x:Key="ProfileBannerBtnConfirm" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource CardActiveBorder}"/>
+            <Setter Property="Foreground" Value="#14151B"/>
+            <Setter Property="FontSize" Value="10.5"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Padding" Value="12,0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="5" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Opacity" Value="0.88"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
                     </ControlTemplate>
                 </Setter.Value>
             </Setter>
         </Style>
     </Window.Resources>
 
-    <!-- Outer Container with Shadow Separator to keep Text 100% Crisp and ClearType enabled -->
-    <Grid Margin="8">
-        <!-- Shadow Caster Layer (Isolated so no child text is rasterized into bitmap) -->
-        <Border Background="{DynamicResource WindowBg}" 
-                CornerRadius="8">
-            <Border.Effect>
-                <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.65"/>
-            </Border.Effect>
-        </Border>
+    <!-- Main Container with Drop Shadow -->
+    <Border x:Name="RootCard"
+            Background="{DynamicResource WindowBg}"
+            BorderBrush="{DynamicResource CardBorder}"
+            BorderThickness="1"
+            CornerRadius="12"
+            Margin="8">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.55"/>
+        </Border.Effect>
 
-        <!-- Main Sharp Card Layer with Gentle Fluid Animation -->
-        <Border x:Name="RootCard"
-                Background="{DynamicResource WindowBg}" 
-                BorderBrush="{DynamicResource TileBorder}" 
-                BorderThickness="1" 
-                CornerRadius="8"
-                RenderOptions.ClearTypeHint="Enabled"
-                TextOptions.TextFormattingMode="Display"
-                TextOptions.TextRenderingMode="ClearType"
-                TextOptions.TextHintingMode="Fixed">
-            <Border.RenderTransform>
-                <TranslateTransform x:Name="RootTranslate" Y="0"/>
-            </Border.RenderTransform>
+        <Grid Margin="16,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- 0: Header -->
+                <RowDefinition Height="Auto"/> <!-- 1: Profile Setup Banner -->
+                <RowDefinition Height="Auto"/> <!-- 2: Güç Seçenekleri Header -->
+                <RowDefinition Height="Auto"/> <!-- 3: Güç Seçenekleri Kartları -->
+                <RowDefinition Height="Auto"/> <!-- 4: Sistem Kaynakları Header -->
+                <RowDefinition Height="Auto"/> <!-- 5: CPU & GPU Kartları -->
+                <RowDefinition Height="Auto"/> <!-- 6: RAM & SSD Kartı -->
+                <RowDefinition Height="Auto"/> <!-- 7: RGB Klavye Aydınlatma Kartı -->
+                <RowDefinition Height="Auto"/> <!-- 8: Güncelleme Kartı (Varsa) -->
+                <RowDefinition Height="Auto"/> <!-- 9: Footer -->
+            </Grid.RowDefinitions>
 
-            <Grid Margin="14,12">
-                <Grid.RowDefinitions>
-                    <RowDefinition Height="Auto"/> <!-- 0: Header (G-Helper Style) -->
-                    <RowDefinition Height="Auto"/> <!-- 1: Performance Mode & CPU -->
-                    <RowDefinition Height="Auto"/> <!-- 2: GPU Mode & Telemetry -->
-                    <RowDefinition Height="Auto"/> <!-- 3: System Resources (RAM & SSD) -->
-                    <RowDefinition Height="Auto"/> <!-- 4: Keyboard Lighting -->
-                    <RowDefinition Height="Auto"/> <!-- 5: System Settings (Startup) -->
-                    <RowDefinition Height="*"/>    <!-- 6: Spacer -->
-                    <RowDefinition Height="Auto"/> <!-- 7: Footer Buttons -->
-                </Grid.RowDefinitions>
+            <!-- ========================================== -->
+            <!-- 0: HEADER (Title, Version Pill, Window Ctrls) -->
+            <!-- ========================================== -->
+            <Grid Grid.Row="0" Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
 
-                <!-- 0: Header (Clean title & close button, draggable) -->
-                <Grid Grid.Row="0" Margin="0,0,0,14" Cursor="SizeAll">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <TextBlock Text="E-Helper — " FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                        <TextBlock x:Name="TxtModelBadge" Text="Casper Excalibur" FontSize="12" Foreground="{DynamicResource TextPrimary}" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                    </StackPanel>
+                <!-- Left: Title + Version Badge -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock Text="E-HELPER" FontSize="14.5" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" 
+                               VerticalAlignment="Center" Margin="0,0,8,0"/>
 
-                    <Button x:Name="BtnCloseToTray" Content="✕" Width="22" Height="22" HorizontalAlignment="Right"
-                            Foreground="{DynamicResource TextMuted}" Background="Transparent" BorderThickness="0" 
-                            FontSize="11" Cursor="Hand" ToolTip="Gizle" Click="BtnCloseToTray_Click">
-                        <Button.Style>
-                            <Style TargetType="Button">
-                                <Setter Property="Template">
-                                    <Setter.Value>
-                                        <ControlTemplate TargetType="Button">
-                                            <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="3">
-                                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                            </Border>
-                                            <ControlTemplate.Triggers>
-                                                <Trigger Property="IsMouseOver" Value="True">
-                                                    <Setter TargetName="b" Property="Background" Value="#333333"/>
-                                                    <Setter Property="Foreground" Value="White"/>
-                                                </Trigger>
-                                            </ControlTemplate.Triggers>
-                                        </ControlTemplate>
-                                    </Setter.Value>
-                                </Setter>
-                            </Style>
-                        </Button.Style>
-                    </Button>
-                </Grid>
-
-                <!-- 1: Section: Performans Modu (G-Helper exact style) -->
-                <StackPanel Grid.Row="1" Margin="0,0,0,14">
-                    <!-- Section Header Row: Title on Left | CPU Temp & RPM on Right -->
-                    <Grid Margin="0,0,0,8">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Viewbox Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center">
-                                <Path Data="{StaticResource IconGauge}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                            </Viewbox>
-                            <TextBlock x:Name="TxtPowerModeTitle" Text="Performans Modu: Dengeli" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <TextBlock Text="CPU: " FontSize="12" Foreground="{DynamicResource TextMuted}"/>
-                            <TextBlock x:Name="TxtCpuTemp" Text="--°C" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0"/>
-                            <TextBlock Text="Fan: " FontSize="12" Foreground="{DynamicResource TextMuted}"/>
-                            <TextBlock x:Name="TxtCpuRpm" Text="--RPM" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- 3 G-Helper Tiles: Tasarruf, Dengeli, Performans -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="6"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="6"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Tasarruf Button -->
-                        <Button x:Name="BtnModeOffice" Grid.Column="0" Style="{StaticResource GHelperTileStyle}" Click="BtnModeOffice_Click">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,1">
-                                <Viewbox Width="16" Height="16" HorizontalAlignment="Center" Margin="0,2,0,5">
-                                    <Path Data="{StaticResource IconEco}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                                </Viewbox>
-                                <TextBlock x:Name="TxtModeOfficeLabel" Text="Tasarruf" FontSize="12" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Dengeli Button -->
-                        <Button x:Name="BtnModeGaming" Grid.Column="2" Style="{StaticResource ActiveGHelperTileStyle}" Click="BtnModeGaming_Click">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,1">
-                                <Viewbox Width="16" Height="16" HorizontalAlignment="Center" Margin="0,2,0,5">
-                                    <Path Data="{StaticResource IconBalanced}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                                </Viewbox>
-                                <TextBlock x:Name="TxtModeGamingLabel" Text="Dengeli" FontSize="12" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-
-                        <!-- Performans Button -->
-                        <Button x:Name="BtnModeHighPerf" Grid.Column="4" Style="{StaticResource GHelperTileStyle}" Click="BtnModeHighPerf_Click">
-                            <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Margin="0,3,0,1">
-                                <Viewbox Width="16" Height="16" HorizontalAlignment="Center" Margin="0,2,0,5">
-                                    <Path Data="{StaticResource IconTurbo}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                                </Viewbox>
-                                <TextBlock x:Name="TxtModeHighPerfLabel" Text="Performans" FontSize="12" HorizontalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
-                    </Grid>
-                </StackPanel>
-
-                <!-- 2: Section: GPU Modu & Telemetri -->
-                <Grid Grid.Row="2" Margin="0,0,0,14">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Viewbox Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center">
-                            <Path Data="{StaticResource IconChip}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                        </Viewbox>
-                        <TextBlock x:Name="TxtGpuHeader" Text="GPU Modu: Ayrık / Hibrit" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
-                    </StackPanel>
-
-                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                        <TextBlock Text="GPU: " FontSize="12" Foreground="{DynamicResource TextMuted}"/>
-                        <TextBlock x:Name="TxtGpuTemp" Text="--°C" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" Margin="0,0,8,0"/>
-                        <TextBlock Text="Fan: " FontSize="12" Foreground="{DynamicResource TextMuted}"/>
-                        <TextBlock x:Name="TxtGpuRpm" Text="--RPM" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                    </StackPanel>
-                </Grid>
-
-                <!-- 3: Section: Sistem Kaynakları (RAM & SSD Metrics) -->
-                <StackPanel Grid.Row="3" Margin="0,0,0,14">
-                    <Grid Margin="0,0,0,8">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Viewbox Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center">
-                                <Path Data="{StaticResource IconActivity}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
-                            </Viewbox>
-                            <TextBlock x:Name="TxtSysResourcesHeader" Text="Sistem Kaynakları" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- 2 Compact Resource Tiles -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="6"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- RAM Metric Card -->
-                        <Border Grid.Column="0" Background="{DynamicResource TileBg}" BorderBrush="{DynamicResource TileBorder}" BorderThickness="1" CornerRadius="4" Padding="10,8">
-                            <StackPanel>
-                                <Grid Margin="0,0,0,4">
-                                    <TextBlock x:Name="TxtRamHeader" Text="RAM Bellek" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
-                                    <TextBlock x:Name="TxtRamPercent" Text="--%" HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentGreen}"/>
-                                </Grid>
-                                <TextBlock x:Name="TxtRamUsage" Text="-- / -- GB" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                                <ProgressBar x:Name="PbRamUsage" Height="3" Margin="0,6,0,0" Value="50" Maximum="100" 
-                                             Foreground="{DynamicResource AccentGreen}" Background="{DynamicResource ProgressTrack}" BorderThickness="0"/>
-                            </StackPanel>
-                        </Border>
-
-                        <!-- SSD Metric Card -->
-                        <Border Grid.Column="2" Background="{DynamicResource TileBg}" BorderBrush="{DynamicResource TileBorder}" BorderThickness="1" CornerRadius="4" Padding="10,8">
-                            <StackPanel>
-                                <Grid Margin="0,0,0,4">
-                                    <TextBlock x:Name="TxtSsdHeader" Text="SSD Disk (C:)" FontSize="11" Foreground="{DynamicResource TextMuted}"/>
-                                    <TextBlock x:Name="TxtSsdPercent" Text="--%" HorizontalAlignment="Right" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentBlue}"/>
-                                </Grid>
-                                <TextBlock x:Name="TxtSsdUsage" Text="-- / -- GB" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                                <ProgressBar x:Name="PbSsdUsage" Height="3" Margin="0,6,0,0" Value="50" Maximum="100" 
-                                             Foreground="{DynamicResource AccentBlue}" Background="{DynamicResource ProgressTrack}" BorderThickness="0"/>
-                            </StackPanel>
-                        </Border>
-                    </Grid>
-                </StackPanel>
-
-                <!-- 4: Section: Laptop Klavyesi (Lighting & RGB Controls) -->
-                <StackPanel Grid.Row="4" Margin="0,0,0,14">
-                    <Grid Margin="0,0,0,8">
-                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                            <Viewbox Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center">
-                                <Path Data="{StaticResource IconKeyboard}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                            </Viewbox>
-                            <TextBlock x:Name="TxtKeyboardHeader" Text="Laptop Klavyesi" FontWeight="SemiBold" FontSize="13" Foreground="{DynamicResource TextPrimary}"/>
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
-                            <TextBlock x:Name="LblBrightnessHeader" Text="Parlaklık: " FontSize="12" Foreground="{DynamicResource TextMuted}"/>
-                            <TextBlock x:Name="TxtBrightnessIcon" Text="%100" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                            <TextBlock x:Name="TxtSpeedHeader" Text=" - Yavaş" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" Visibility="Collapsed"/>
-                        </StackPanel>
-                    </Grid>
-
-                    <!-- Mode Selector Dropdown & Side Color Button (G-Helper / User Reference Style) -->
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="8"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-
-                        <!-- Left: Mode Dropdown Selector -->
-                        <ComboBox x:Name="CmbLedMode" Grid.Column="0" 
-                                  Style="{StaticResource GHelperComboBoxStyle}" 
-                                  ItemContainerStyle="{StaticResource GHelperComboBoxItemStyle}"
-                                  SelectionChanged="CmbLedMode_SelectionChanged">
-                            <ComboBoxItem x:Name="CmbItemStatic" Tag="Static">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
-                                        <Path Data="{StaticResource IconModeStatic}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
-                                    </Viewbox>
-                                    <TextBlock x:Name="TxtItemStaticLabel" Text="Sabit" FontSize="12" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem x:Name="CmbItemBreathing" Tag="Breathing">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
-                                        <Path Data="{StaticResource IconModeBreathing}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                                    </Viewbox>
-                                    <TextBlock x:Name="TxtItemBreathingLabel" Text="Nefes" FontSize="12" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem x:Name="CmbItemDynamic" Tag="ColorfulCycle">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
-                                        <Path Data="{StaticResource IconModeDynamic}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
-                                    </Viewbox>
-                                    <TextBlock x:Name="TxtItemDynamicLabel" Text="Dinamik" FontSize="12" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem x:Name="CmbItemCycle" Tag="Cycle">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
-                                        <Path Data="{StaticResource IconModeCycle}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                                    </Viewbox>
-                                    <TextBlock x:Name="TxtItemCycleLabel" Text="Döngü" FontSize="12" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem x:Name="CmbItemRainbow" Tag="Rainbow">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
-                                        <Path Data="{StaticResource IconModeRainbow}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                                    </Viewbox>
-                                    <TextBlock x:Name="TxtItemRainbowLabel" Text="Gökkuşağı" FontSize="12" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                            <ComboBoxItem x:Name="CmbItemTripleZone" Tag="TripleZone">
-                                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                                    <Viewbox Width="13" Height="13" Margin="0,0,8,0" VerticalAlignment="Center">
-                                        <Path Data="{StaticResource IconModeTripleZone}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
-                                    </Viewbox>
-                                    <TextBlock x:Name="TxtItemTripleZoneLabel" Text="3-Bölge" FontSize="12" VerticalAlignment="Center"/>
-                                </StackPanel>
-                            </ComboBoxItem>
-                        </ComboBox>
-
-                        <!-- Right: Side Color Button (Always visible; enabled for Static, Breathing, TripleZone) -->
-                        <Button x:Name="BtnModeColorAction" Grid.Column="2" 
-                                Style="{StaticResource GHelperTileStyle}" 
-                                Height="32" Padding="0"
-                                Click="BtnModeColorAction_Click">
-                            <Grid Width="160" VerticalAlignment="Center">
-                                <TextBlock x:Name="TxtModeColorActionLabel" Text="Renk" FontSize="12" 
-                                           Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Left" VerticalAlignment="Center" Margin="12,0,0,0"/>
-                                <Border x:Name="BrdModeColorIndicator" Width="14" Height="14" CornerRadius="2" 
-                                        Background="#EF4444" BorderBrush="#88FFFFFF" BorderThickness="1" 
-                                        HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,12,0"/>
-                            </Grid>
-                        </Button>
-                    </Grid>
-
-                    <!-- Brightness Slider -->
-                    <Grid Margin="0,0,0,8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="LblBrightnessTitle" Text="Parlaklık" MinWidth="54" FontSize="12" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                        <Slider x:Name="SliderBrightness" Grid.Column="1" Margin="12,0,0,0" Minimum="0" Maximum="2" Value="2" 
-                                Style="{StaticResource ModernBrightnessSliderStyle}"
-                                TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="SliderBrightness_ValueChanged"/>
-                    </Grid>
-
-                    <!-- Speed Slider (Visible in Cycle, Rainbow, Breathing modes) -->
-                    <Grid x:Name="PnlCycleSpeed" Margin="0,0,0,8" Visibility="Collapsed">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBlock x:Name="LblCycleSpeedTitle" Text="Hız" MinWidth="54" FontSize="12" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
-                        <Slider x:Name="SliderCycleSpeed" Grid.Column="1" Margin="12,0,0,0" Minimum="0" Maximum="2" Value="0" 
-                                Style="{StaticResource ModernBrightnessSliderStyle}"
-                                TickFrequency="1" IsSnapToTickEnabled="True" VerticalAlignment="Center" ValueChanged="SliderCycleSpeed_ValueChanged"/>
-                    </Grid>
-
-                    <!-- Bird's-eye 2D 3-Piece Keyboard Symbol (Visible only in 3-Bölge mode) -->
-                    <!-- Each segment has its independent crisp border and color swatch -->
-                    <Border x:Name="PnlTripleZoneDiagram" Visibility="Collapsed" Margin="0,0,0,6" 
-                            Background="{DynamicResource DiagramBg}" BorderBrush="{DynamicResource TileBorder}" 
-                            BorderThickness="1" CornerRadius="5" Padding="6,6"
-                            RenderOptions.ClearTypeHint="Enabled"
-                            TextOptions.TextFormattingMode="Display"
-                            TextOptions.TextRenderingMode="ClearType"
-                            TextOptions.TextHintingMode="Fixed">
-                        <StackPanel>
-                            <!-- Minimalist Header -->
-                            <Grid Margin="2,0,2,6">
-                                <TextBlock x:Name="TxtDiagramTitle" Text="Bölge Seç ve Rengini Belirle:" FontSize="12" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
-                            </Grid>
-
-                            <!-- 2D Bird's-eye 3-Piece Keyboard Schematic -->
-                            <Grid Height="34">
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="4"/>
-                                    <ColumnDefinition Width="1.15*"/>
-                                    <ColumnDefinition Width="4"/>
-                                    <ColumnDefinition Width="*"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Piece 1: Sol Parça (Left Zone) -->
-                                <Border x:Name="BrdZoneLeft" Grid.Column="0" CornerRadius="4" BorderThickness="1" 
-                                        BorderBrush="{DynamicResource TileBorder}" Background="{DynamicResource TileBg}"
-                                        Cursor="Hand" MouseLeftButtonDown="BtnZoneLeft_Click">
-                                    <Grid Margin="4,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border x:Name="DotZoneLeft" Grid.Column="0" Width="10" Height="10" CornerRadius="2" Background="#00E5FF" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="LblZoneLeft" Grid.Column="1" Text="Sol" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-
-                                <!-- Piece 2: Orta Parça (Center Zone) -->
-                                <Border x:Name="BrdZoneCenter" Grid.Column="2" CornerRadius="4" BorderThickness="1" 
-                                        BorderBrush="{DynamicResource TileBorder}" Background="{DynamicResource TileBg}"
-                                        Cursor="Hand" MouseLeftButtonDown="BtnZoneCenter_Click">
-                                    <Grid Margin="4,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border x:Name="DotZoneCenter" Grid.Column="0" Width="10" Height="10" CornerRadius="2" Background="#22C55E" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="LblZoneCenter" Grid.Column="1" Text="Orta" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-
-                                <!-- Piece 3: Sağ Parça (Right Zone) -->
-                                <Border x:Name="BrdZoneRight" Grid.Column="4" CornerRadius="4" BorderThickness="1" 
-                                        BorderBrush="{DynamicResource TileBorder}" Background="{DynamicResource TileBg}"
-                                        Cursor="Hand" MouseLeftButtonDown="BtnZoneRight_Click">
-                                    <Grid Margin="4,2">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="Auto"/>
-                                            <ColumnDefinition Width="*"/>
-                                        </Grid.ColumnDefinitions>
-                                        <Border x:Name="DotZoneRight" Grid.Column="0" Width="10" Height="10" CornerRadius="2" Background="#EF4444" VerticalAlignment="Center"/>
-                                        <TextBlock x:Name="LblZoneRight" Grid.Column="1" Text="Sağ" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                    </Grid>
-                                </Border>
-                            </Grid>
-                        </StackPanel>
+                    <Border Background="{DynamicResource BadgeBg}" BorderBrush="{DynamicResource BadgeBorder}" 
+                            BorderThickness="1" CornerRadius="4" Padding="7,2" VerticalAlignment="Center">
+                        <TextBlock x:Name="TxtAppVersionPill" Text="v1.3.0" FontSize="10.5" FontWeight="SemiBold" 
+                                   Foreground="{DynamicResource TextMuted}" TextWrapping="NoWrap"/>
                     </Border>
                 </StackPanel>
 
-                <!-- 5: System Settings (Startup Checkbox) -->
-                <StackPanel Grid.Row="5" Margin="0,0,0,8">
-                    <CheckBox x:Name="ChkAutoStart" Content="Başlangıçta Çalıştır" 
-                              Foreground="{DynamicResource TextPrimary}" FontSize="12" 
-                              VerticalContentAlignment="Center" Checked="ChkAutoStart_Changed" Unchecked="ChkAutoStart_Changed"/>
-                </StackPanel>
+                <!-- Right: Window Controls (Close) -->
+                <Button Grid.Column="1" x:Name="BtnClose" Style="{StaticResource WindowCtrlBtnStyle}" Click="BtnClose_Click" ToolTip="Kapat / Tepsiye Gizle" VerticalAlignment="Center">
+                    <TextBlock Text="✕" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                </Button>
+            </Grid>
 
-                <!-- 6: Spacer -->
-                <Grid Grid.Row="6"/>
+            <!-- ========================================== -->
+            <!-- 1: PROFILE SETUP BANNER (Mod Ayarlama)     -->
+            <!-- ========================================== -->
+            <Border x:Name="PnlProfileSetupBanner" Grid.Row="1" 
+                    Background="{DynamicResource CardHoverBg}" 
+                    BorderBrush="{DynamicResource CardActiveBorder}" 
+                    BorderThickness="1.5" CornerRadius="8" 
+                    Padding="10,8" Margin="0,0,0,10" Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
 
-                <!-- 7: Footer Action Area -->
-                <Grid Grid.Row="7">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/> <!-- Top row: Version / Update link -->
-                        <RowDefinition Height="Auto"/> <!-- Bottom row: Theme, Lang, Exit buttons -->
-                    </Grid.RowDefinitions>
+                    <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,8,0">
+                        <TextBlock x:Name="TxtProfileSetupBannerTitle" Text="🎯 Profil Ayar Modu" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource AccentCyan}" TextTrimming="CharacterEllipsis"/>
+                        <TextBlock x:Name="TxtProfileSetupBannerDesc" Text="Güç ve RGB ayarlarını seçip onaylayın" FontSize="9.5" Foreground="{DynamicResource TextSecondary}" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"/>
+                    </StackPanel>
 
-                    <!-- Top Sub-Row: Sürüm / Güncelleme linki (eski v1.1.0 yerinde) -->
-                    <Grid Grid.Row="0" Margin="2,0,0,6">
-                        <TextBlock x:Name="TxtUpdateStatus" FontSize="11" Cursor="Hand"
-                                   Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"
-                                   MouseLeftButtonDown="TxtUpdateStatus_Click">
-                            <Underline><Run x:Name="RunUpdateStatus" Text="Sürüm: 1.1.1"/></Underline>
-                        </TextBlock>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button x:Name="BtnCancelProfileSettings" Content="İptal" Style="{StaticResource ProfileBannerBtnCancel}" Click="BtnCancelProfileSettings_Click" Margin="0,0,6,0"/>
+                        <Button x:Name="BtnConfirmProfileSettings" Content="✓ Onayla" Style="{StaticResource ProfileBannerBtnConfirm}" Click="BtnConfirmProfileSettings_Click"/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- ========================================== -->
+            <!-- 2: GÜÇ SEÇENEKLERİ BAŞLIĞI                -->
+            <!-- ========================================== -->
+            <TextBlock Grid.Row="2" x:Name="TxtHeaderPowerOptions" Text="GÜÇ SEÇENEKLERİ" 
+                       FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+
+            <!-- ========================================== -->
+            <!-- 3: GÜÇ SEÇENEKLERİ KARTLARI (3'lü Grid)   -->
+            <!-- ========================================== -->
+            <Grid Grid.Row="3" Margin="0,0,0,14">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <Button x:Name="BtnPowerOffice" Grid.Column="0" Click="BtnPowerOffice_Click" Style="{StaticResource PowerCardButtonStyle}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Viewbox Width="17" Height="17" Margin="0,0,0,5">
+                            <Path x:Name="IconPowerOffice" Data="{StaticResource IconEco}" Stroke="{DynamicResource TextMuted}" StrokeThickness="1.6"/>
+                        </Viewbox>
+                        <TextBlock x:Name="TxtPowerOfficeTitle" Text="Tasarruf" FontSize="11.5" FontWeight="SemiBold" 
+                                   Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" TextWrapping="NoWrap"/>
+                        <TextBlock x:Name="TxtPowerOfficeSub" Text="Sessiz" FontSize="9.5" 
+                                   Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" Margin="0,2,0,0" TextWrapping="NoWrap"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnPowerGaming" Grid.Column="2" Click="BtnPowerGaming_Click" Style="{StaticResource PowerCardButtonStyle}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Viewbox Width="17" Height="17" Margin="0,0,0,5">
+                            <Path x:Name="IconPowerGaming" Data="{StaticResource IconBalanced}" Stroke="{DynamicResource TextMuted}" StrokeThickness="1.6"/>
+                        </Viewbox>
+                        <TextBlock x:Name="TxtPowerGamingTitle" Text="Dengeli" FontSize="11.5" FontWeight="SemiBold" 
+                                   Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" TextWrapping="NoWrap"/>
+                        <TextBlock x:Name="TxtPowerGamingSub" Text="Günlük" FontSize="9.5" 
+                                   Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" Margin="0,2,0,0" TextWrapping="NoWrap"/>
+                    </StackPanel>
+                </Button>
+
+                <Button x:Name="BtnPowerTurbo" Grid.Column="4" Click="BtnPowerTurbo_Click" Style="{StaticResource PowerCardButtonStyle}">
+                    <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                        <Viewbox Width="17" Height="17" Margin="0,0,0,5">
+                            <Path x:Name="IconPowerTurbo" Data="{StaticResource IconTurbo}" Fill="{DynamicResource TextMuted}"/>
+                        </Viewbox>
+                        <TextBlock x:Name="TxtPowerTurboTitle" Text="Performans" FontSize="11.5" FontWeight="SemiBold" 
+                                   Foreground="{DynamicResource TextSecondary}" HorizontalAlignment="Center" TextWrapping="NoWrap"/>
+                        <TextBlock x:Name="TxtPowerTurboSub" Text="Turbo" FontSize="9.5" 
+                                   Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Center" Margin="0,2,0,0" TextWrapping="NoWrap"/>
+                    </StackPanel>
+                </Button>
+            </Grid>
+
+            <!-- ========================================== -->
+            <!-- 4: SİSTEM KAYNAKLARI BAŞLIĞI              -->
+            <!-- ========================================== -->
+            <TextBlock Grid.Row="4" x:Name="TxtHeaderSystemResources" Text="SİSTEM KAYNAKLARI" 
+                       FontSize="10.5" FontWeight="Bold" Foreground="{DynamicResource TextMuted}" Margin="0,0,0,8"/>
+
+            <!-- ========================================== -->
+            <!-- 5: CPU & GPU KARTLARI (Yan Yana)          -->
+            <!-- ========================================== -->
+            <Grid Grid.Row="5" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="6"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- CPU CARD (İŞLEMCİ) -->
+                <Border Grid.Column="0" Background="{DynamicResource CardBg}" BorderBrush="{DynamicResource CardBorder}" 
+                        BorderThickness="1" CornerRadius="8" Padding="12,10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Row 0: Dot + Header (left) | Model (right) -->
+                        <Grid Grid.Row="0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentCyan}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="TxtCpuHeader" Text="İŞLEMCİ" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="TxtCpuModel" Text="i7-13700H" FontSize="10.5" Foreground="{DynamicResource TextMuted}" 
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+
+                        <!-- Row 1: Large Temp (left) | Usage (right) -->
+                        <Grid Grid.Row="1" Margin="0,6,0,8">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtCpuTemp" Text="68" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                                <TextBlock Text="°C" FontSize="12" Foreground="{DynamicResource TextMuted}" Margin="2,4,0,0" VerticalAlignment="Top"/>
+                            </StackPanel>
+
+                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtCpuUsagePercent" Text="44%" FontSize="12" FontWeight="Bold" 
+                                           Foreground="{DynamicResource AccentCyan}" HorizontalAlignment="Right"/>
+                                <TextBlock x:Name="TxtCpuUsageLabel" Text="Kullanım" FontSize="9.5" 
+                                           Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Row 2: Fan (left) | RPM (right) -->
+                        <Grid Grid.Row="2">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Viewbox Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconFanMini}" Stroke="{DynamicResource TextMuted}" StrokeThickness="1.5"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtCpuFanLabel" Text="Fan" FontSize="10.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="TxtCpuRpm" Text="2800 RPM" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" 
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+
+                <!-- GPU CARD (EKRAN KARTI) -->
+                <Border Grid.Column="2" Background="{DynamicResource CardBg}" BorderBrush="{DynamicResource CardBorder}" 
+                        BorderThickness="1" CornerRadius="8" Padding="12,10">
+                    <Grid>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+
+                        <!-- Row 0: Dot + Header (left) | Model (right) -->
+                        <Grid Grid.Row="0">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Ellipse Width="6" Height="6" Fill="{DynamicResource AccentGreen}" Margin="0,0,5,0" VerticalAlignment="Center"/>
+                                <TextBlock x:Name="TxtGpuHeader" Text="EKRAN KARTI" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="TxtGpuModel" Text="RTX 4070" FontSize="10.5" Foreground="{DynamicResource TextMuted}" 
+                                       HorizontalAlignment="Right" VerticalAlignment="Center" TextTrimming="CharacterEllipsis"/>
+                        </Grid>
+
+                        <!-- Row 1: Large Temp (left) | Usage (right) -->
+                        <Grid Grid.Row="1" Margin="0,6,0,8">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtGpuTemp" Text="72" FontSize="26" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}"/>
+                                <TextBlock Text="°C" FontSize="12" Foreground="{DynamicResource TextMuted}" Margin="2,4,0,0" VerticalAlignment="Top"/>
+                            </StackPanel>
+
+                            <StackPanel HorizontalAlignment="Right" VerticalAlignment="Center">
+                                <TextBlock x:Name="TxtGpuUsagePercent" Text="82%" FontSize="12" FontWeight="Bold" 
+                                           Foreground="{DynamicResource AccentGreen}" HorizontalAlignment="Right"/>
+                                <TextBlock x:Name="TxtGpuUsageLabel" Text="Kullanım" FontSize="9.5" 
+                                           Foreground="{DynamicResource TextMuted}" HorizontalAlignment="Right" Margin="0,1,0,0"/>
+                            </StackPanel>
+                        </Grid>
+
+                        <!-- Row 2: Fan (left) | RPM (right) -->
+                        <Grid Grid.Row="2">
+                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                <Viewbox Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center">
+                                    <Path Data="{StaticResource IconFanMini}" Stroke="{DynamicResource TextMuted}" StrokeThickness="1.5"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtGpuFanLabel" Text="Fan" FontSize="10.5" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                            </StackPanel>
+                            <TextBlock x:Name="TxtGpuRpm" Text="3100 RPM" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" 
+                                       HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        </Grid>
+                    </Grid>
+                </Border>
+            </Grid>
+
+            <!-- ========================================== -->
+            <!-- 6: RAM & SSD KARTI (Kombine Tek Kart)      -->
+            <!-- ========================================== -->
+            <Border Grid.Row="6" Background="{DynamicResource CardBg}" BorderBrush="{DynamicResource CardBorder}" 
+                    BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,12">
+                <StackPanel>
+                    <!-- Row 1: RAM Header -->
+                    <Grid Margin="0,0,0,4">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Path x:Name="IconRamPath" Data="{StaticResource IconRam}" Stroke="{DynamicResource AccentColor}" StrokeThickness="1.5"/>
+                            </Viewbox>
+                            <TextBlock x:Name="TxtRamLabel" Text="RAM (Bellek)" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtRamPercent" Text="54%" FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentColor}" Margin="0,0,4,0"/>
+                            <TextBlock x:Name="TxtRamUsage" Text="•  17.2 / 32 GB" FontSize="11" 
+                                       Foreground="{DynamicResource TextMuted}" TextWrapping="NoWrap"/>
+                        </StackPanel>
                     </Grid>
 
-                    <!-- Bottom Sub-Row: AÇIK/KOYU Tema, DİL ve ÇIKIŞ Butonları (Boyut ve hizalamaları aynı) -->
-                    <Grid Grid.Row="1">
+                    <ProgressBar x:Name="PbRamUsage" Value="54" Maximum="100" 
+                                 Foreground="{DynamicResource AccentColor}"
+                                 Style="{StaticResource ModernProgressBarStyle}" Margin="0,0,0,9"/>
+
+                    <!-- Row 2: SSD Header -->
+                    <Grid Margin="0,0,0,4">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
+                                <Path x:Name="IconDiskPath" Data="{StaticResource IconDisk}" Stroke="{DynamicResource AccentColor}" StrokeThickness="1.5"/>
+                            </Viewbox>
+                            <TextBlock x:Name="TxtSsdLabel" Text="SSD (Depolama)" FontSize="11" Foreground="{DynamicResource TextSecondary}"/>
+                        </StackPanel>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                            <TextBlock x:Name="TxtSsdPercent" Text="62%" FontSize="11" FontWeight="Bold" 
+                                       Foreground="{DynamicResource AccentColor}" Margin="0,0,4,0"/>
+                            <TextBlock x:Name="TxtSsdUsage" Text="•  1.2 / 2.0 TB" FontSize="11" 
+                                       Foreground="{DynamicResource TextMuted}" TextWrapping="NoWrap"/>
+                        </StackPanel>
+                    </Grid>
+
+                    <ProgressBar x:Name="PbSsdUsage" Value="62" Maximum="100" 
+                                 Foreground="{DynamicResource AccentColor}"
+                                 Style="{StaticResource ModernProgressBarStyle}"/>
+                </StackPanel>
+            </Border>
+
+            <!-- ========================================== -->
+            <!-- 7: RGB KLAVYE AYDINLATMA KARTI             -->
+            <!-- ========================================== -->
+            <Border Grid.Row="7" Background="{DynamicResource CardBg}" BorderBrush="{DynamicResource CardBorder}" 
+                    BorderThickness="1" CornerRadius="8" Padding="12,11" Margin="0,0,0,10">
+                <StackPanel>
+                    <!-- Header -->
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,9">
+                        <Viewbox Width="14" Height="14" Margin="0,0,7,0" VerticalAlignment="Center">
+                            <Path Data="{StaticResource IconKeyboard}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6"/>
+                        </Viewbox>
+                        <TextBlock x:Name="TxtHeaderRgb" Text="RGB Klavye Aydınlatma" FontSize="12" FontWeight="Bold" 
+                                   Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                    </StackPanel>
+
+                    <!-- Effect Dropdown Selector -->
+                    <ComboBox x:Name="CmbLedMode" Style="{StaticResource ModernComboBoxStyle}" 
+                              ItemContainerStyle="{StaticResource ModernComboBoxItemStyle}" 
+                              SelectionChanged="CmbLedMode_SelectionChanged" Margin="0,0,0,10">
+                        <ComboBoxItem x:Name="CmbItemRainbow" Tag="Rainbow">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Viewbox Width="13" Height="13" Margin="0,0,8,0">
+                                    <Path Data="{StaticResource IconModeRainbow}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.5"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtItemRainbowLabel" Text="Gökkuşağı Akışı" FontSize="11.5" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem x:Name="CmbItemCycle" Tag="Cycle">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Viewbox Width="13" Height="13" Margin="0,0,8,0">
+                                    <Path Data="{StaticResource IconModeCycle}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.5"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtItemCycleLabel" Text="Spektrum" FontSize="11.5" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem x:Name="CmbItemStatic" Tag="Static">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Viewbox Width="13" Height="13" Margin="0,0,8,0">
+                                    <Path Data="{StaticResource IconModeStatic}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.5"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtItemStaticLabel" Text="Sabit" FontSize="11.5" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem x:Name="CmbItemBreathing" Tag="Breathing">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Viewbox Width="13" Height="13" Margin="0,0,8,0">
+                                    <Path Data="{StaticResource IconModeBreathing}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.5"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtItemBreathingLabel" Text="Nefes" FontSize="11.5" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem x:Name="CmbItemDynamic" Tag="ColorfulCycle">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Viewbox Width="13" Height="13" Margin="0,0,8,0">
+                                    <Path Data="{StaticResource IconModeDynamic}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.5"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtItemDynamicLabel" Text="Dinamik" FontSize="11.5" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                        <ComboBoxItem x:Name="CmbItemTripleZone" Tag="TripleZone">
+                            <StackPanel Orientation="Horizontal" HorizontalAlignment="Left" VerticalAlignment="Center">
+                                <Viewbox Width="13" Height="13" Margin="0,0,8,0">
+                                    <Path Data="{StaticResource IconModeTripleZone}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.5"/>
+                                </Viewbox>
+                                <TextBlock x:Name="TxtItemTripleZoneLabel" Text="3-Bölge Özel" FontSize="11.5" VerticalAlignment="Center"/>
+                            </StackPanel>
+                        </ComboBoxItem>
+                    </ComboBox>
+
+                    <!-- Sub-Controls: Left (Brightness 0/50/100) | Right (Speed or Color) -->
+                    <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="6"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="6"/>
+                            <ColumnDefinition Width="10"/>
                             <ColumnDefinition Width="*"/>
                         </Grid.ColumnDefinitions>
 
-                        <!-- Tema butonu (Açık/Koyu) -->
-                        <Button x:Name="BtnThemeToggle" Grid.Column="0" Style="{StaticResource FooterBtnStyle}" Click="BtnThemeToggle_Click">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
-                                    <Path x:Name="IconThemePath" Data="{StaticResource IconSun}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                                </Viewbox>
-                                <TextBlock x:Name="TxtThemeToggleLabel" Text="Açık" FontSize="11" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
+                        <!-- Left Column: Brightness -->
+                        <StackPanel Grid.Column="0">
+                            <TextBlock x:Name="TxtBrightnessTitle" Text="Parlaklık" FontSize="10.5" 
+                                       Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4"/>
+                            <Grid Height="28">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" x:Name="BtnBright0" Content="%0" Style="{StaticResource SegmentButtonStyle}" Click="BtnBright0_Click"/>
+                                <Button Grid.Column="2" x:Name="BtnBright50" Content="%50" Style="{StaticResource SegmentButtonStyle}" Click="BtnBright50_Click"/>
+                                <Button Grid.Column="4" x:Name="BtnBright100" Content="%100" Style="{StaticResource SegmentButtonStyle}" Click="BtnBright100_Click"/>
+                            </Grid>
+                        </StackPanel>
 
-                        <!-- Dil butonu (TR/EN) -->
-                        <Button x:Name="BtnLangToggle" Grid.Column="2" Style="{StaticResource FooterBtnStyle}" ToolTip="Dili Değiştir / Change Language" Click="BtnLangToggle_Click">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
-                                    <Path Data="{StaticResource IconGlobe}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" Stretch="Uniform"/>
-                                </Viewbox>
-                                <TextBlock x:Name="TxtLangToggleLabel" Text="EN" FontSize="11" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
+                        <!-- Right Column: Speed OR Color -->
+                        <StackPanel Grid.Column="2">
+                            <TextBlock x:Name="TxtDynamicControlTitle" Text="Hız" FontSize="10.5" 
+                                       Foreground="{DynamicResource TextMuted}" Margin="0,0,0,4"/>
 
-                        <!-- Çıkış butonu -->
-                        <Button x:Name="BtnExitApp" Grid.Column="4" Style="{StaticResource FooterBtnStyle}" Click="BtnExitApp_Click">
-                            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" HorizontalAlignment="Center">
-                                <Viewbox Width="13" Height="13" Margin="0,0,6,0" VerticalAlignment="Center">
-                                    <Path Data="{StaticResource IconPower}" Stroke="{DynamicResource TextPrimary}" StrokeThickness="1.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round" Stretch="Uniform"/>
-                                </Viewbox>
-                                <TextBlock x:Name="TxtExitAppLabel" Text="Çıkış" FontSize="11" VerticalAlignment="Center"/>
-                            </StackPanel>
-                        </Button>
+                            <!-- View 1: 3-Tier Speed Selector (When Cycle or Rainbow is selected) -->
+                            <Grid x:Name="GridSpeedSelector" Height="28">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" x:Name="BtnSpeedSlow" Content="Yavaş" Style="{StaticResource SegmentButtonStyle}" Click="BtnSpeedSlow_Click"/>
+                                <Button Grid.Column="2" x:Name="BtnSpeedMedium" Content="Orta" Style="{StaticResource SegmentButtonStyle}" Click="BtnSpeedMedium_Click"/>
+                                <Button Grid.Column="4" x:Name="BtnSpeedFast" Content="Hızlı" Style="{StaticResource SegmentButtonStyle}" Click="BtnSpeedFast_Click"/>
+                            </Grid>
+
+                            <!-- View 2: Single Color Picker Button (When Static, Breathing, or Dynamic is selected) -->
+                            <Grid x:Name="GridSingleColorSelector" Height="28" Visibility="Collapsed">
+                                <Button x:Name="BtnOpenColorPicker" Height="28" Style="{StaticResource SegmentButtonStyle}" Click="BtnOpenColorPicker_Click">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse x:Name="EllipseSingleColor" Width="10" Height="10" Fill="#22D3EE" Margin="0,0,6,0"/>
+                                        <TextBlock x:Name="TxtSingleColorHex" Text="#22D3EE" FontSize="11" FontWeight="Bold" 
+                                                   Foreground="{DynamicResource TextPrimary}" Margin="0,0,6,0"/>
+                                        <Viewbox x:Name="ViewboxPaletteIcon" Width="11" Height="11">
+                                            <Path Data="{StaticResource IconPalette}" Fill="{DynamicResource TextMuted}"/>
+                                        </Viewbox>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+
+                            <!-- View 3: 3-Zone Color Selector (When 3-Zone mode is selected) -->
+                            <Grid x:Name="GridTripleZoneSelector" Height="28" Visibility="Collapsed">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="4"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                <Button Grid.Column="0" x:Name="BtnZoneLeft" Height="28" Style="{StaticResource SegmentButtonStyle}" Click="BtnZoneLeft_Click">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse x:Name="EllipseZoneLeft" Width="8" Height="8" Fill="#00E5FF" Margin="0,0,4,0"/>
+                                        <TextBlock x:Name="TxtZoneLeftLabel" Text="Sol" FontSize="10"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="2" x:Name="BtnZoneCenter" Height="28" Style="{StaticResource SegmentButtonStyle}" Click="BtnZoneCenter_Click">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse x:Name="EllipseZoneCenter" Width="8" Height="8" Fill="#22C55E" Margin="0,0,4,0"/>
+                                        <TextBlock x:Name="TxtZoneCenterLabel" Text="Orta" FontSize="10"/>
+                                    </StackPanel>
+                                </Button>
+                                <Button Grid.Column="4" x:Name="BtnZoneRight" Height="28" Style="{StaticResource SegmentButtonStyle}" Click="BtnZoneRight_Click">
+                                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                                        <Ellipse x:Name="EllipseZoneRight" Width="8" Height="8" Fill="#EF4444" Margin="0,0,4,0"/>
+                                        <TextBlock x:Name="TxtZoneRightLabel" Text="Sağ" FontSize="10"/>
+                                    </StackPanel>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
                     </Grid>
-                </Grid>
+                </StackPanel>
+            </Border>
 
+            <!-- ========================================== -->
+            <!-- 8: GÜNCELLEME KARTI (Yalnızca Güncelleme Varsa) -->
+            <!-- ========================================== -->
+            <Border Grid.Row="8" x:Name="CardUpdateBanner" Background="{DynamicResource CardBg}" 
+                    BorderBrush="{DynamicResource CardBorder}" BorderThickness="1" CornerRadius="8" 
+                    Padding="10,8" Margin="0,0,0,10" Visibility="Collapsed">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+
+                    <!-- Left: Info Icon -->
+                    <Viewbox Grid.Column="0" Width="14" Height="14" Margin="0,0,8,0" VerticalAlignment="Center">
+                        <Path Data="{StaticResource IconInfo}" Stroke="{DynamicResource TextMuted}" StrokeThickness="1.6"/>
+                    </Viewbox>
+
+                    <!-- Middle: Title -->
+                    <TextBlock Grid.Column="1" x:Name="TxtUpdateBannerMessage" 
+                               Text="v1.3.0 Güncellemesi Mevcut" FontSize="11" FontWeight="SemiBold" 
+                               Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center" 
+                               TextTrimming="CharacterEllipsis" TextWrapping="NoWrap" Margin="0,0,8,0"/>
+
+                    <!-- Right: Action Button -->
+                    <Button Grid.Column="2" x:Name="BtnUpdateAction" Content="Güncelle" Click="BtnUpdateAction_Click" 
+                            MinWidth="80" Height="28" Padding="14,0" 
+                            Style="{StaticResource UpdateActionButtonStyle}"/>
+                </Grid>
+            </Border>
+
+            <!-- ========================================== -->
+            <!-- 9: FOOTER / ALT BAR                       -->
+            <!-- ========================================== -->
+            <Grid Grid.Row="9" VerticalAlignment="Center" Margin="0,2,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Left: Laptop Model + Status ("Excalibur G911 - Güncel") -->
+                <StackPanel Grid.Column="0" Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="TxtModelBadge" Text="Excalibur G911" FontSize="11" FontWeight="Medium" 
+                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtModelStatus" Text=" - Güncel" FontSize="11" FontWeight="Medium" 
+                               Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <!-- Right: Settings, Theme, Lang, Divider, Exit -->
+                <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Settings -->
+                    <Button x:Name="BtnSettings" Style="{StaticResource FooterIconBtnStyle}" Click="BtnSettings_Click" ToolTip="Ayarlar" Margin="0,0,3,0">
+                        <Viewbox Width="14" Height="14">
+                            <Path Data="{StaticResource IconSettings}" Stroke="{DynamicResource TextMuted}" StrokeThickness="1.6"/>
+                        </Viewbox>
+                    </Button>
+
+                    <!-- Theme Toggle -->
+                    <Button x:Name="BtnThemeToggle" Style="{StaticResource FooterIconBtnStyle}" Click="BtnThemeToggle_Click" ToolTip="Tema (Koyu / Açık)" Margin="0,0,3,0">
+                        <Viewbox Width="14" Height="14">
+                            <Path x:Name="IconThemePath" StrokeThickness="1.5" StrokeStartLineCap="Round" StrokeEndLineCap="Round"/>
+                        </Viewbox>
+                    </Button>
+
+                    <!-- Language Toggle -->
+                    <Button x:Name="BtnLangToggle" Style="{StaticResource FooterIconBtnStyle}" MinWidth="52" Padding="6,0" Click="BtnLangToggle_Click" ToolTip="Dil (TR / EN)">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Viewbox Width="12" Height="12" Margin="0,0,4,0" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconGlobe}" Stroke="{DynamicResource TextMuted}" StrokeThickness="1.6"/>
+                            </Viewbox>
+                            <TextBlock x:Name="TxtLangCode" Text="TR" FontSize="11" FontWeight="Bold" Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                        </StackPanel>
+                    </Button>
+
+                    <!-- Vertical Divider -->
+                    <Rectangle Width="1" Height="14" Fill="{DynamicResource CardBorder}" Margin="6,0"/>
+
+                    <!-- Exit App -->
+                    <Button x:Name="BtnExitApp" Style="{StaticResource FooterExitBtnStyle}" Click="BtnExitApp_Click" ToolTip="Çıkış">
+                        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                            <Viewbox Width="12" Height="12" Margin="0,0,5,0" VerticalAlignment="Center">
+                                <Path Data="{StaticResource IconPower}" Stroke="{DynamicResource TextMuted}" StrokeThickness="1.7"/>
+                            </Viewbox>
+                            <TextBlock x:Name="TxtExitLabel" Text="Çıkış" FontSize="11" FontWeight="SemiBold" Foreground="{DynamicResource TextPrimary}"/>
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
-        </Border>
-    </Grid>
+        </Grid>
+    </Border>
 </Window>

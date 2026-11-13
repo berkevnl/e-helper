@@ -1,6 +1,7 @@
 using System;
 using System.Diagnostics;
 using System.Globalization;
+using System.Threading;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -11,13 +12,13 @@ using EHelper.Core;
 using EHelper.Hardware.Casper;
 using EHelper.Hardware.Simulation;
 using EHelper.Services;
-using Microsoft.Win32;
+using EHelper.UI;
 
 using Button = System.Windows.Controls.Button;
-using Color = System.Windows.Media.Color;
+using MediaColor = System.Windows.Media.Color;
 using MessageBox = System.Windows.MessageBox;
-using Point = System.Windows.Point;
-using MouseEventArgs = System.Windows.Input.MouseEventArgs;
+using Brushes = System.Windows.Media.Brushes;
+using Brush = System.Windows.Media.Brush;
 
 namespace EHelper
 {
@@ -30,7 +31,6 @@ namespace EHelper
 
         private PowerMode _currentPowerMode;
         private LedMode _currentLedMode;
-        private LedMode _lastActiveLedMode = LedMode.Static;
         private byte _brightness;
         private byte _red;
         private byte _green;
@@ -44,12 +44,17 @@ namespace EHelper
 
         private bool _isDarkTheme;
 
-        private System.Threading.CancellationTokenSource? _animCts;
+        private CancellationTokenSource? _animCts;
         private int _cycleSpeed = 0;
 
         private bool _isInitialized;
         private UpdateCheckResult? _latestUpdateResult;
         private bool _isUpdating;
+
+        private AppProfile? _editingProfile;
+        private bool _isProfileSetupMode;
+        private string? _activeProfileName;
+        private AppProfile? _snapshotBeforeProfile;
 
         public MainWindow(IHardwareProvider bridge, bool isSimulated, ConfigManager config, HardwareMonitorService monitor)
         {
@@ -60,9 +65,14 @@ namespace EHelper
 
             InitializeComponent();
 
+            Loaded += (s, e) => PositionBottomRight();
+            ContentRendered += (s, e) => PositionBottomRight();
+
             _isInitialized = false;
             ApplyInitialState();
+            UpdateSystemResourcesUI();
             _isInitialized = true;
+
             SubscribeTelemetry();
             TriggerBackgroundUpdateCheck();
         }
@@ -94,10 +104,6 @@ namespace EHelper
                 _currentLedMode = LedMode.Static;
                 _brightness = 0;
             }
-            else
-            {
-                _lastActiveLedMode = _currentLedMode;
-            }
 
             // Load Language
             LocalizationManager.CurrentLanguage = s.Language ?? "TR";
@@ -106,37 +112,19 @@ namespace EHelper
             ApplyTheme(_isDarkTheme);
             ApplyLocalization();
 
+            // Version Pill
+            TxtAppVersionPill.Text = $"v{UpdateService.CurrentVersion}";
+
             // UI Initial Values
             TxtModelBadge.Text = _bridge.DeviceModel;
+            TxtModelStatus.Text = $" {LocalizationManager.UpToDate}";
 
-            SliderBrightness.Value = _brightness;
-            UpdateBrightnessUI();
+            HighlightBrightnessButtons(_brightness);
 
             _cycleSpeed = Math.Clamp(s.CycleSpeed, 0, 2);
-            if (SliderCycleSpeed != null)
-            {
-                SliderCycleSpeed.Value = _cycleSpeed;
-            }
-            UpdateCycleSpeedUI();
+            HighlightSpeedButtons(_cycleSpeed);
 
-            UpdateColorPreview();
-
-            // Synchronize Windows Startup state asynchronously in background (0ms UI startup delay)
-            ChkAutoStart.IsChecked = s.StartWithWindows;
-            System.Threading.Tasks.Task.Run(() =>
-            {
-                try
-                {
-                    StartupManager.EnsureStartupSynchronized(s.StartWithWindows);
-                    bool actual = StartupManager.IsStartupEnabled();
-                    Dispatcher.InvokeAsync(() =>
-                    {
-                        ChkAutoStart.IsChecked = actual;
-                    });
-                }
-                catch { }
-            });
-
+            UpdateColorSwatches();
             UpdatePowerModeButtonsUI();
             UpdateLedModeButtonsUI();
 
@@ -153,9 +141,8 @@ namespace EHelper
             });
 
             // Gaming laptop EC / BIOS post-boot synchronization:
-            // Laptop EC firmware and ACPI drivers often perform a reset 1-3 seconds after Windows logon.
-            // Re-applying the user's saved lighting and power mode after short delays ensures
-            // user settings are preserved across reboots and shutdowns.
+            // Laptop EC firmware often resets state 1-3 seconds after Windows logon.
+            // Re-applying settings ensures preservation across reboots.
             System.Threading.Tasks.Task.Run(async () =>
             {
                 try
@@ -174,49 +161,61 @@ namespace EHelper
                         ApplyLedSettings();
                     });
                 }
-                catch
-                {
-                    // Ignore background async re-apply exceptions
-                }
+                catch { }
             });
 
             // Initial System Metrics query
             UpdateSystemResourcesUI();
+
+            // Aggressive Startup Working Set Optimization (flushes initial WPF startup bloat down to ~25-35 MB)
+            System.Threading.Tasks.Task.Run(async () =>
+            {
+                await System.Threading.Tasks.Task.Delay(500);
+                MemoryOptimizer.TrimMemory();
+                await System.Threading.Tasks.Task.Delay(2000);
+                MemoryOptimizer.TrimMemory();
+            });
         }
 
         private void SubscribeTelemetry()
         {
             _monitor.TelemetryUpdated += telemetry =>
             {
+                // Zero UI overhead when minimized/hidden in tray
+                if (!IsVisible) return;
+
                 Dispatcher.InvokeAsync(() =>
                 {
                     UpdateTelemetryUI(telemetry);
-
-                    // Only refresh RAM/SSD metrics when the user is actively viewing the panel
-                    if (IsVisible)
-                    {
-                        UpdateSystemResourcesUI();
-                    }
+                    UpdateSystemResourcesUI();
                 });
             };
+        }
+
+        private static void SetTextIfChanged(TextBlock? tb, string text)
+        {
+            if (tb != null && tb.Text != text)
+            {
+                tb.Text = text;
+            }
         }
 
         private void UpdateTelemetryUI(HardwareTelemetry t)
         {
             if (!t.IsAvailable)
             {
-                TxtCpuTemp.Text = "--°C";
-                TxtGpuTemp.Text = "--°C";
-                TxtCpuRpm.Text = "--RPM";
-                TxtGpuRpm.Text = "--RPM";
+                SetTextIfChanged(TxtCpuTemp, "--");
+                SetTextIfChanged(TxtGpuTemp, "--");
+                SetTextIfChanged(TxtCpuRpm, "0 RPM");
+                SetTextIfChanged(TxtGpuRpm, "0 RPM");
                 return;
             }
 
-            TxtCpuTemp.Text = t.CpuTemperature > 0 ? $"{t.CpuTemperature}°C" : "--°C";
-            TxtGpuTemp.Text = t.GpuTemperature > 0 ? $"{t.GpuTemperature}°C" : "--°C";
+            SetTextIfChanged(TxtCpuTemp, t.CpuTemperature > 0 ? $"{t.CpuTemperature}" : "--");
+            SetTextIfChanged(TxtGpuTemp, t.GpuTemperature > 0 ? $"{t.GpuTemperature}" : "--");
 
-            TxtCpuRpm.Text = $"{t.CpuFanRpm}RPM";
-            TxtGpuRpm.Text = $"{t.GpuFanRpm}RPM";
+            SetTextIfChanged(TxtCpuRpm, t.CpuFanRpm > 0 ? $"{t.CpuFanRpm} RPM" : "0 RPM");
+            SetTextIfChanged(TxtGpuRpm, t.GpuFanRpm > 0 ? $"{t.GpuFanRpm} RPM" : "0 RPM");
         }
 
         private void UpdateSystemResourcesUI()
@@ -225,12 +224,31 @@ namespace EHelper
             {
                 var metrics = SystemResourceMonitor.GetMetrics();
 
-                TxtRamPercent.Text = $"{metrics.RamPercent}%";
-                TxtRamUsage.Text = $"{metrics.RamUsedGb:F1} / {metrics.RamTotalGb:F1} GB";
+                // CPU & GPU usage percent
+                SetTextIfChanged(TxtCpuUsagePercent, $"{metrics.CpuUsagePercent}%");
+                SetTextIfChanged(TxtGpuUsagePercent, $"{metrics.GpuUsagePercent}%");
+
+                // Model labels (if detected)
+                if (!string.IsNullOrWhiteSpace(metrics.CpuName))
+                {
+                    SetTextIfChanged(TxtCpuModel, metrics.CpuName);
+                }
+                if (!string.IsNullOrWhiteSpace(metrics.GpuName))
+                {
+                    SetTextIfChanged(TxtGpuModel, metrics.GpuName);
+                }
+
+                // RAM metrics
+                SetTextIfChanged(TxtRamPercent, $"{metrics.RamPercent}%");
+                SetTextIfChanged(TxtRamUsage, $"•  {metrics.RamUsedGb:F1} / {metrics.RamTotalGb:F0} GB");
                 PbRamUsage.Value = metrics.RamPercent;
 
-                TxtSsdPercent.Text = $"{metrics.SsdPercent}%";
-                TxtSsdUsage.Text = $"{metrics.SsdUsedGb:F0} / {metrics.SsdTotalGb:F0} GB";
+                // SSD metrics
+                SetTextIfChanged(TxtSsdPercent, $"{metrics.SsdPercent}%");
+                string ssdText = metrics.SsdTotalGb >= 1000 
+                    ? $"•  {metrics.SsdUsedGb / 1024.0:F1} / {metrics.SsdTotalGb / 1024.0:F1} TB" 
+                    : $"•  {metrics.SsdUsedGb:F0} / {metrics.SsdTotalGb:F0} GB";
+                SetTextIfChanged(TxtSsdUsage, ssdText);
                 PbSsdUsage.Value = metrics.SsdPercent;
             }
             catch { }
@@ -241,65 +259,39 @@ namespace EHelper
         public void PositionBottomRight()
         {
             var workArea = SystemParameters.WorkArea;
-            Left = Math.Max(workArea.Left + 8, workArea.Right - Width - 8);
-            Top = Math.Max(workArea.Top + 8, workArea.Bottom - Height - 8);
+            double w = !double.IsNaN(Width) && Width > 0 ? Width : (ActualWidth > 0 ? ActualWidth : 435);
+            
+            if (ActualHeight <= 0)
+            {
+                Measure(new System.Windows.Size(w, double.PositiveInfinity));
+            }
+            double h = ActualHeight > 0 ? ActualHeight : (DesiredSize.Height > 0 ? DesiredSize.Height : 660);
+
+            Left = Math.Max(workArea.Left + 8, workArea.Right - w - 8);
+            Top = Math.Max(workArea.Top + 8, workArea.Bottom - h - 8);
         }
 
         public void ToggleFlyout()
         {
             if (IsVisible)
             {
-                if (RootCard != null)
-                {
-                    var anim = new DoubleAnimation(0, TimeSpan.FromMilliseconds(120))
-                    {
-                        EasingFunction = new QuadraticEase { EasingMode = EasingMode.EaseIn }
-                    };
-                    anim.Completed += (s, e) =>
-                    {
-                        Hide();
-                        MemoryOptimizer.TrimMemory();
-                    };
-                    RootCard.BeginAnimation(UIElement.OpacityProperty, anim);
-                }
-                else
-                {
-                    Hide();
-                    MemoryOptimizer.TrimMemory();
-                }
+                Hide();
+                System.Threading.Tasks.Task.Run(() => MemoryOptimizer.TrimMemory());
             }
             else
             {
-                PositionBottomRight();
                 UpdateSystemResourcesUI();
                 Show();
+                PositionBottomRight();
+                Dispatcher.BeginInvoke(System.Windows.Threading.DispatcherPriority.Loaded, new Action(PositionBottomRight));
                 Activate();
                 Focus();
 
-                // Soft smooth fade & slide-in from bottom
-                if (RootCard != null)
-                {
-                    var fadeAnim = new DoubleAnimation(0, 1, TimeSpan.FromMilliseconds(180))
-                    {
-                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                    };
-                    RootCard.BeginAnimation(UIElement.OpacityProperty, fadeAnim);
-                }
-                if (RootTranslate != null)
-                {
-                    var slideAnim = new DoubleAnimation(8, 0, TimeSpan.FromMilliseconds(180))
-                    {
-                        EasingFunction = new CubicEase { EasingMode = EasingMode.EaseOut }
-                    };
-                    RootTranslate.BeginAnimation(TranslateTransform.YProperty, slideAnim);
-                }
-
-                // Optimize memory after UI layout is rendered on screen (drops RAM down to ~15-30 MB)
-                Dispatcher.InvokeAsync(async () =>
+                System.Threading.Tasks.Task.Run(async () =>
                 {
                     await System.Threading.Tasks.Task.Delay(300);
                     MemoryOptimizer.TrimMemory();
-                }, System.Windows.Threading.DispatcherPriority.ApplicationIdle);
+                });
             }
         }
 
@@ -309,16 +301,16 @@ namespace EHelper
             base.OnClosed(e);
         }
 
-        protected override void OnDeactivated(EventArgs e)
+        private void BtnMinimize_Click(object sender, RoutedEventArgs e)
         {
-            base.OnDeactivated(e);
-            // Çarpıya basılmadığı sürece pencerenin kapanmaması için OnDeactivated otomatik gizleme kaldırıldı
+            WindowState = WindowState.Minimized;
+            System.Threading.Tasks.Task.Run(() => MemoryOptimizer.TrimMemory());
         }
 
-        private void BtnCloseToTray_Click(object sender, RoutedEventArgs e)
+        private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
             Hide();
-            MemoryOptimizer.TrimMemory();
+            System.Threading.Tasks.Task.Run(() => MemoryOptimizer.TrimMemory());
         }
 
         private void Window_MouseLeftButtonDown(object sender, MouseButtonEventArgs e)
@@ -333,17 +325,17 @@ namespace EHelper
 
         #region Power Modes
 
-        private void BtnModeOffice_Click(object sender, RoutedEventArgs e)
+        private void BtnPowerOffice_Click(object sender, RoutedEventArgs e)
         {
             SetPowerMode(PowerMode.Office);
         }
 
-        private void BtnModeGaming_Click(object sender, RoutedEventArgs e)
+        private void BtnPowerGaming_Click(object sender, RoutedEventArgs e)
         {
             SetPowerMode(PowerMode.Gaming);
         }
 
-        private void BtnModeHighPerf_Click(object sender, RoutedEventArgs e)
+        private void BtnPowerTurbo_Click(object sender, RoutedEventArgs e)
         {
             SetPowerMode(PowerMode.HighPerformance);
         }
@@ -362,19 +354,38 @@ namespace EHelper
 
         private void UpdatePowerModeButtonsUI()
         {
-            var normalStyle = TryFindResource("GHelperTileStyle") as Style;
-            var activeStyle = TryFindResource("ActiveGHelperTileStyle") as Style;
+            ApplyPowerCardState(BtnPowerOffice, IconPowerOffice, TxtPowerOfficeTitle, TxtPowerOfficeSub, _currentPowerMode == PowerMode.Office, isStroke: true);
+            ApplyPowerCardState(BtnPowerGaming, IconPowerGaming, TxtPowerGamingTitle, TxtPowerGamingSub, _currentPowerMode == PowerMode.Gaming, isStroke: true);
+            ApplyPowerCardState(BtnPowerTurbo, IconPowerTurbo, TxtPowerTurboTitle, TxtPowerTurboSub, _currentPowerMode == PowerMode.HighPerformance, isStroke: false);
+        }
 
-            if (BtnModeOffice != null && normalStyle != null && activeStyle != null)
+        private void ApplyPowerCardState(Button? btn, System.Windows.Shapes.Path? icon, TextBlock? title, TextBlock? sub, bool isActive, bool isStroke)
+        {
+            if (btn == null || icon == null || title == null || sub == null) return;
+
+            if (isActive)
             {
-                BtnModeOffice.Style = _currentPowerMode == PowerMode.Office ? activeStyle : normalStyle;
-                BtnModeGaming.Style = _currentPowerMode == PowerMode.Gaming ? activeStyle : normalStyle;
-                BtnModeHighPerf.Style = _currentPowerMode == PowerMode.HighPerformance ? activeStyle : normalStyle;
+                btn.SetResourceReference(Button.BackgroundProperty, "CardActiveBg");
+                btn.SetResourceReference(Button.BorderBrushProperty, "CardActiveBorder");
+                if (isStroke)
+                    icon.SetResourceReference(System.Windows.Shapes.Path.StrokeProperty, "TextPrimary");
+                else
+                    icon.SetResourceReference(System.Windows.Shapes.Path.FillProperty, "TextPrimary");
+                title.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
+                title.FontWeight = FontWeights.Bold;
+                sub.SetResourceReference(TextBlock.ForegroundProperty, "TextPrimary");
             }
-
-            if (TxtPowerModeTitle != null)
+            else
             {
-                TxtPowerModeTitle.Text = LocalizationManager.GetPowerModeTitle(_currentPowerMode);
+                btn.SetResourceReference(Button.BackgroundProperty, "CardBg");
+                btn.SetResourceReference(Button.BorderBrushProperty, "CardBorder");
+                if (isStroke)
+                    icon.SetResourceReference(System.Windows.Shapes.Path.StrokeProperty, "TextMuted");
+                else
+                    icon.SetResourceReference(System.Windows.Shapes.Path.FillProperty, "TextMuted");
+                title.SetResourceReference(TextBlock.ForegroundProperty, "TextSecondary");
+                title.FontWeight = FontWeights.SemiBold;
+                sub.SetResourceReference(TextBlock.ForegroundProperty, "TextMuted");
             }
         }
 
@@ -400,34 +411,19 @@ namespace EHelper
             SetLedMode(newMode);
         }
 
-        private void BtnModeColorAction_Click(object sender, RoutedEventArgs e)
-        {
-            // Only functional for Static and Breathing modes
-            if (_currentLedMode == LedMode.Static || _currentLedMode == LedMode.Breathing)
-            {
-                BtnCustomColor_Click(sender, e);
-            }
-        }
-
         private void SetLedMode(LedMode mode)
         {
             _currentLedMode = mode;
-            _lastActiveLedMode = _currentLedMode;
 
             // Aydınlatma 0 ise kullanıcı mod seçtiğinde otomatik olarak %100 seviyesine (2) aç
             if (_brightness == 0)
             {
                 _brightness = 2;
-                if (SliderBrightness != null && SliderBrightness.Value != 2)
-                {
-                    SliderBrightness.Value = 2;
-                }
-                UpdateBrightnessUI();
+                HighlightBrightnessButtons(_brightness);
             }
 
             UpdateLedModeButtonsUI();
-            UpdateTripleZoneUI();
-            UpdateColorPreview();
+            UpdateColorSwatches();
             ApplyLedSettings();
         }
 
@@ -459,196 +455,161 @@ namespace EHelper
                 }
             }
 
-            // 3-Bölge diyagramı yalnızca TripleZone modunda görünür
-            if (PnlTripleZoneDiagram != null)
+            // Configure dynamic right column
+            if (_currentLedMode == LedMode.Cycle || _currentLedMode == LedMode.Rainbow)
             {
-                PnlTripleZoneDiagram.Visibility = _currentLedMode == LedMode.TripleZone ? Visibility.Visible : Visibility.Collapsed;
+                TxtDynamicControlTitle.Text = LocalizationManager.CycleSpeedTitle;
+                GridSpeedSelector.Visibility = Visibility.Visible;
+                GridSingleColorSelector.Visibility = Visibility.Collapsed;
+                GridTripleZoneSelector.Visibility = Visibility.Collapsed;
+                HighlightSpeedButtons(_cycleSpeed);
             }
-
-            // Hız ayar barı yalnızca Döngü (Cycle) ve Gökkuşağı (Rainbow) modlarında görünür
-            bool hasSpeed = _currentLedMode == LedMode.Cycle || _currentLedMode == LedMode.Rainbow;
-            if (PnlCycleSpeed != null)
+            else if (_currentLedMode == LedMode.TripleZone)
             {
-                PnlCycleSpeed.Visibility = hasSpeed ? Visibility.Visible : Visibility.Collapsed;
+                TxtDynamicControlTitle.Text = LocalizationManager.ZoneColorsTitle;
+                GridSpeedSelector.Visibility = Visibility.Collapsed;
+                GridSingleColorSelector.Visibility = Visibility.Collapsed;
+                GridTripleZoneSelector.Visibility = Visibility.Visible;
+                UpdateTripleZoneSwatches();
             }
-            if (TxtSpeedHeader != null)
+            else
             {
-                TxtSpeedHeader.Visibility = hasSpeed ? Visibility.Visible : Visibility.Collapsed;
-            }
-
-            // Yan Renk Butonu (BtnModeColorAction): Sabit ve Nefes modlarında etkindir; Dinamik, Gökkuşağı ve 3-Bölge modlarında devre dışı/soluk
-            if (BtnModeColorAction != null)
-            {
-                bool canColor = _currentLedMode == LedMode.Static || _currentLedMode == LedMode.Breathing;
-                BtnModeColorAction.IsEnabled = canColor;
-                BtnModeColorAction.Opacity = canColor ? 1.0 : 0.45;
-                if (BrdModeColorIndicator != null)
-                {
-                    BrdModeColorIndicator.Visibility = canColor ? Visibility.Visible : Visibility.Collapsed;
-                }
+                // Static, Breathing, ColorfulCycle
+                TxtDynamicControlTitle.Text = LocalizationManager.ColorLabel;
+                GridSpeedSelector.Visibility = Visibility.Collapsed;
+                GridSingleColorSelector.Visibility = Visibility.Visible;
+                GridTripleZoneSelector.Visibility = Visibility.Collapsed;
+                UpdateSingleColorSwatch();
             }
         }
 
-        #region 3-Zone Keyboard Interactive Diagram Handlers
+        #region Segmented Buttons (Brightness & Speed)
 
-        private void BtnZoneLeft_Click(object sender, RoutedEventArgs e)
+        private void BtnBright0_Click(object sender, RoutedEventArgs e)
         {
-            _activeZoneIndex = 0;
-            UpdateTripleZoneUI();
-            UpdateColorPreview();
-            // Kullanıcı sol bölgeye bastığında doğrudan renk seçicisini açar
-            BtnCustomColor_Click(sender, e);
+            SetBrightness(0);
         }
 
-        private void BtnZoneCenter_Click(object sender, RoutedEventArgs e)
+        private void BtnBright50_Click(object sender, RoutedEventArgs e)
         {
-            _activeZoneIndex = 1;
-            UpdateTripleZoneUI();
-            UpdateColorPreview();
-            // Kullanıcı orta bölgeye bastığında doğrudan renk seçicisini açar
-            BtnCustomColor_Click(sender, e);
+            SetBrightness(1);
         }
 
-        private void BtnZoneRight_Click(object sender, RoutedEventArgs e)
+        private void BtnBright100_Click(object sender, RoutedEventArgs e)
         {
-            _activeZoneIndex = 2;
-            UpdateTripleZoneUI();
-            UpdateColorPreview();
-            // Kullanıcı sağ bölgeye bastığında doğrudan renk seçicisini açar
-            BtnCustomColor_Click(sender, e);
+            SetBrightness(2);
         }
 
-        private void UpdateTripleZoneUI()
+        private void SetBrightness(byte level)
         {
-            // Renk fırçaları
-            var leftBrush = new SolidColorBrush(Color.FromRgb(_zoneLeftR, _zoneLeftG, _zoneLeftB));
-            var centerBrush = new SolidColorBrush(Color.FromRgb(_zoneCenterR, _zoneCenterG, _zoneCenterB));
-            var rightBrush = new SolidColorBrush(Color.FromRgb(_zoneRightR, _zoneRightG, _zoneRightB));
-
-            var activeBorder = TryFindResource("ZoneTileActiveBorder") as System.Windows.Media.Brush ?? TryFindResource("TileActiveBorder") as System.Windows.Media.Brush ?? new SolidColorBrush(_isDarkTheme ? Color.FromRgb(0, 144, 255) : Color.FromRgb(0, 122, 255));
-            var normalBorder = TryFindResource("ZoneTileBorder") as System.Windows.Media.Brush ?? TryFindResource("TileBorder") as System.Windows.Media.Brush ?? new SolidColorBrush(_isDarkTheme ? Color.FromRgb(56, 56, 56) : Color.FromRgb(209, 209, 214));
-            var activeBg = TryFindResource("ZoneTileActiveBg") as System.Windows.Media.Brush ?? TryFindResource("TileActiveBg") as System.Windows.Media.Brush ?? new SolidColorBrush(_isDarkTheme ? Color.FromRgb(25, 39, 56) : Color.FromRgb(225, 239, 255));
-            var normalBg = TryFindResource("ZoneTileBg") as System.Windows.Media.Brush ?? TryFindResource("TileBg") as System.Windows.Media.Brush ?? new SolidColorBrush(_isDarkTheme ? Color.FromRgb(38, 38, 38) : Color.FromRgb(255, 255, 255));
-
-            // Zone 0: Left
-            if (BrdZoneLeft != null)
-            {
-                BrdZoneLeft.BorderBrush = _activeZoneIndex == 0 ? activeBorder : normalBorder;
-                BrdZoneLeft.BorderThickness = new Thickness(_activeZoneIndex == 0 ? 2 : 1);
-                BrdZoneLeft.Background = _activeZoneIndex == 0 ? activeBg : normalBg;
-            }
-            if (DotZoneLeft != null)
-            {
-                DotZoneLeft.Background = leftBrush;
-            }
-
-            // Zone 1: Center
-            if (BrdZoneCenter != null)
-            {
-                BrdZoneCenter.BorderBrush = _activeZoneIndex == 1 ? activeBorder : normalBorder;
-                BrdZoneCenter.BorderThickness = new Thickness(_activeZoneIndex == 1 ? 2 : 1);
-                BrdZoneCenter.Background = _activeZoneIndex == 1 ? activeBg : normalBg;
-            }
-            if (DotZoneCenter != null)
-            {
-                DotZoneCenter.Background = centerBrush;
-            }
-
-            // Zone 2: Right
-            if (BrdZoneRight != null)
-            {
-                BrdZoneRight.BorderBrush = _activeZoneIndex == 2 ? activeBorder : normalBorder;
-                BrdZoneRight.BorderThickness = new Thickness(_activeZoneIndex == 2 ? 2 : 1);
-                BrdZoneRight.Background = _activeZoneIndex == 2 ? activeBg : normalBg;
-            }
-            if (DotZoneRight != null)
-            {
-                DotZoneRight.Background = rightBrush;
-            }
-
-            if (TxtDiagramTitle != null)
-            {
-                TxtDiagramTitle.Foreground = TryFindResource("TextPrimary") as System.Windows.Media.Brush ?? new SolidColorBrush(Color.FromRgb(255, 255, 255));
-            }
-        }
-
-        #endregion
-
-        private void UpdateBrightnessUI()
-        {
-            string text;
-
-            switch (_brightness)
-            {
-                case 0:
-                    text = "%0";
-                    break;
-                case 1:
-                    text = "%50";
-                    break;
-                case 2:
-                default:
-                    text = "%100";
-                    break;
-            }
-
-            if (TxtBrightnessIcon != null)
-            {
-                TxtBrightnessIcon.Text = text;
-                TxtBrightnessIcon.ToolTip = text;
-            }
-
-            if (SliderBrightness != null)
-            {
-                SliderBrightness.ToolTip = text;
-            }
-        }
-
-        private void SliderBrightness_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            if (!_isInitialized || SliderBrightness == null) return;
-            byte val = (byte)Math.Clamp(SliderBrightness.Value, 0, 2);
-
-            _brightness = val;
-            UpdateBrightnessUI();
+            _brightness = level;
+            HighlightBrightnessButtons(_brightness);
             ApplyLedSettings();
         }
 
-        private void SliderCycleSpeed_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        private void HighlightBrightnessButtons(byte level)
         {
-            if (!_isInitialized || SliderCycleSpeed == null) return;
-            int val = (int)Math.Clamp(Math.Round(SliderCycleSpeed.Value), 0, 2);
+            SetSegmentActive(BtnBright0, level == 0);
+            SetSegmentActive(BtnBright50, level == 1);
+            SetSegmentActive(BtnBright100, level == 2);
+        }
 
-            _cycleSpeed = val;
-            UpdateCycleSpeedUI();
+        private void BtnSpeedSlow_Click(object sender, RoutedEventArgs e)
+        {
+            SetCycleSpeed(0);
+        }
+
+        private void BtnSpeedMedium_Click(object sender, RoutedEventArgs e)
+        {
+            SetCycleSpeed(1);
+        }
+
+        private void BtnSpeedFast_Click(object sender, RoutedEventArgs e)
+        {
+            SetCycleSpeed(2);
+        }
+
+        private void SetCycleSpeed(int speed)
+        {
+            _cycleSpeed = Math.Clamp(speed, 0, 2);
+            HighlightSpeedButtons(_cycleSpeed);
 
             if (_config != null)
             {
                 _config.CurrentSettings.CycleSpeed = _cycleSpeed;
                 _config.SaveSettings();
             }
+
+            if (_currentLedMode == LedMode.Cycle || _currentLedMode == LedMode.Rainbow)
+            {
+                StartActiveAnimation();
+            }
         }
 
-        private void UpdateCycleSpeedUI()
+        private void HighlightSpeedButtons(int speed)
         {
-            string text = _cycleSpeed switch
-            {
-                1 => LocalizationManager.SpeedMedium,
-                2 => LocalizationManager.SpeedFast,
-                _ => LocalizationManager.SpeedSlow
-            };
+            SetSegmentActive(BtnSpeedSlow, speed == 0);
+            SetSegmentActive(BtnSpeedMedium, speed == 1);
+            SetSegmentActive(BtnSpeedFast, speed == 2);
+        }
 
-            if (TxtSpeedHeader != null)
+        private void SetSegmentActive(Button? btn, bool isActive)
+        {
+            if (btn == null) return;
+            if (isActive)
             {
-                TxtSpeedHeader.Text = $" - {text}";
+                btn.SetResourceReference(Button.BackgroundProperty, "SegmentActiveBg");
+                btn.SetResourceReference(Button.BorderBrushProperty, "SegmentActiveBorder");
+                btn.SetResourceReference(Button.ForegroundProperty, "TextPrimary");
+                btn.FontWeight = FontWeights.Bold;
             }
-            if (SliderCycleSpeed != null)
+            else
             {
-                SliderCycleSpeed.ToolTip = $"{LocalizationManager.CycleSpeedTitle}: {text}";
+                btn.SetResourceReference(Button.BackgroundProperty, "SegmentBg");
+                btn.SetResourceReference(Button.BorderBrushProperty, "SegmentBorder");
+                btn.SetResourceReference(Button.ForegroundProperty, "TextMuted");
+                btn.FontWeight = FontWeights.Normal;
             }
         }
 
-        private void BtnCustomColor_Click(object sender, RoutedEventArgs e)
+        #endregion
+
+        #region Color Picker & Zone Handlers
+
+        private void BtnOpenColorPicker_Click(object sender, RoutedEventArgs e)
+        {
+            OpenColorPickerForCurrentZone();
+        }
+
+        private void BtnZoneLeft_Click(object sender, RoutedEventArgs e)
+        {
+            _activeZoneIndex = 0;
+            HighlightZoneButtons();
+            OpenColorPickerForCurrentZone();
+        }
+
+        private void BtnZoneCenter_Click(object sender, RoutedEventArgs e)
+        {
+            _activeZoneIndex = 1;
+            HighlightZoneButtons();
+            OpenColorPickerForCurrentZone();
+        }
+
+        private void BtnZoneRight_Click(object sender, RoutedEventArgs e)
+        {
+            _activeZoneIndex = 2;
+            HighlightZoneButtons();
+            OpenColorPickerForCurrentZone();
+        }
+
+        private void HighlightZoneButtons()
+        {
+            SetSegmentActive(BtnZoneLeft, _activeZoneIndex == 0);
+            SetSegmentActive(BtnZoneCenter, _activeZoneIndex == 1);
+            SetSegmentActive(BtnZoneRight, _activeZoneIndex == 2);
+        }
+
+        private void OpenColorPickerForCurrentZone()
         {
             byte initR, initG, initB;
             if (_currentLedMode == LedMode.TripleZone)
@@ -665,12 +626,12 @@ namespace EHelper
                 (initR, initG, initB) = (_red, _green, _blue);
             }
 
-            var picker = new UI.ColorPickerWindow(initR, initG, initB)
+            var picker = new ColorPickerWindow(initR, initG, initB)
             {
                 Owner = this
             };
 
-            // Donanım WMI haberleşmesini arka plan iş parçacığına taşıyıp arayüzün (UI) 0ms kasmadan çalışmasını sağlıyoruz
+            // Donanım WMI/EC haberleşmesini arka plan iş parçacığına taşıyıp UI akıcılığını koruyoruz
             (byte R, byte G, byte B)? pendingColor = null;
             int isSendingHardware = 0;
 
@@ -703,7 +664,6 @@ namespace EHelper
                                     }
                                 }
 
-                                // Donanım veri yolunu (EC SMI) tıkamamak için kısa bekleme
                                 await System.Threading.Tasks.Task.Delay(60);
                             }
                         }
@@ -720,7 +680,6 @@ namespace EHelper
                 }
             }
 
-            // Renk seçicide gezinirken donanımda asenkron gerçek zamanlı canlı önizleme
             picker.ColorPreviewChanged += (r, g, b) =>
             {
                 ScheduleHardwarePreview((r, g, b));
@@ -732,23 +691,7 @@ namespace EHelper
             }
             else
             {
-                // İptal edilirse orijinal renge geri dön
                 ApplyLedSettings();
-            }
-        }
-
-        private void ColorPreset_Click(object sender, RoutedEventArgs e)
-        {
-            if (sender is Button btn && btn.Tag is string hex)
-            {
-                string cleanHex = hex.TrimStart('#');
-                if (cleanHex.Length == 6 &&
-                    byte.TryParse(cleanHex[..2], NumberStyles.HexNumber, null, out byte r) &&
-                    byte.TryParse(cleanHex[2..4], NumberStyles.HexNumber, null, out byte g) &&
-                    byte.TryParse(cleanHex[4..6], NumberStyles.HexNumber, null, out byte b))
-                {
-                    SetRgbColor(r, g, b);
-                }
             }
         }
 
@@ -769,45 +712,57 @@ namespace EHelper
                         _zoneRightR = r; _zoneRightG = g; _zoneRightB = b;
                         break;
                 }
-                UpdateTripleZoneUI();
+                UpdateTripleZoneSwatches();
             }
             else
             {
                 _red = r;
                 _green = g;
                 _blue = b;
+                UpdateSingleColorSwatch();
             }
 
-            UpdateColorPreview();
             ApplyLedSettings();
         }
 
-        private void UpdateColorPreview()
+        private void UpdateColorSwatches()
         {
-            byte dispR, dispG, dispB;
-            if (_currentLedMode == LedMode.TripleZone)
-            {
-                (dispR, dispG, dispB) = _activeZoneIndex switch
-                {
-                    0 => (_zoneLeftR, _zoneLeftG, _zoneLeftB),
-                    1 => (_zoneCenterR, _zoneCenterG, _zoneCenterB),
-                    _ => (_zoneRightR, _zoneRightG, _zoneRightB)
-                };
-            }
-            else
-            {
-                (dispR, dispG, dispB) = (_red, _green, _blue);
-            }
+            UpdateSingleColorSwatch();
+            UpdateTripleZoneSwatches();
+        }
 
-            if (BrdModeColorIndicator != null)
+        private void UpdateSingleColorSwatch()
+        {
+            if (EllipseSingleColor != null)
             {
-                BrdModeColorIndicator.Background = new SolidColorBrush(Color.FromRgb(dispR, dispG, dispB));
+                EllipseSingleColor.Fill = new SolidColorBrush(MediaColor.FromRgb(_red, _green, _blue));
+            }
+            if (TxtSingleColorHex != null)
+            {
+                TxtSingleColorHex.Text = $"#{_red:X2}{_green:X2}{_blue:X2}";
             }
         }
 
-        private void ApplyLedSettings()
+        private void UpdateTripleZoneSwatches()
         {
-            if (!_isInitialized || _bridge == null || _config == null) return;
+            if (EllipseZoneLeft != null)
+            {
+                EllipseZoneLeft.Fill = new SolidColorBrush(MediaColor.FromRgb(_zoneLeftR, _zoneLeftG, _zoneLeftB));
+            }
+            if (EllipseZoneCenter != null)
+            {
+                EllipseZoneCenter.Fill = new SolidColorBrush(MediaColor.FromRgb(_zoneCenterR, _zoneCenterG, _zoneCenterB));
+            }
+            if (EllipseZoneRight != null)
+            {
+                EllipseZoneRight.Fill = new SolidColorBrush(MediaColor.FromRgb(_zoneRightR, _zoneRightG, _zoneRightB));
+            }
+            HighlightZoneButtons();
+        }
+
+        private void ApplyLedHardwareOnly()
+        {
+            if (!_isInitialized || _bridge == null) return;
 
             if (_brightness == 0)
             {
@@ -833,13 +788,17 @@ namespace EHelper
                     }
                     else
                     {
-                        // Hardware EC brightness levels:
-                        // Level 1 => 50% Brightness
-                        // Level 2 => 100% Brightness
                         _bridge.SetAllKeyboardLed(_currentLedMode, _brightness, _red, _green, _blue);
                     }
                 }
             }
+        }
+
+        private void ApplyLedSettings()
+        {
+            if (!_isInitialized || _bridge == null || _config == null) return;
+
+            ApplyLedHardwareOnly();
 
             _config.CurrentSettings.LedMode = _currentLedMode;
             _config.CurrentSettings.LedBrightness = _brightness;
@@ -869,7 +828,7 @@ namespace EHelper
                 return;
             }
 
-            var cts = new System.Threading.CancellationTokenSource();
+            var cts = new CancellationTokenSource();
             _animCts = cts;
 
             System.Threading.Tasks.Task.Run(async () =>
@@ -886,37 +845,29 @@ namespace EHelper
 
                         if (_currentLedMode == LedMode.Cycle)
                         {
-                            // Ultra-smooth synchronized single-color spectrum flow across all keys (70 FPS, direct 3-zone write)
                             var (r, g, b) = HsvToRgb(phase, 1.0, 1.0);
                             _bridge.SetKeyboardTripleZone(_brightness, (r, g, b), (r, g, b), (r, g, b));
 
-                            // Speed: 0 -> Yavaş (~0.5 deg / 14ms = ~10.0s full loop)
-                            //        1 -> Orta (~2.1 deg / 14ms = ~2.4s full loop - previous Fast)
-                            //        2 -> Hızlı (~7.0 deg / 14ms = ~0.72s full loop - extra fast!)
                             double step = _cycleSpeed switch
                             {
-                                1 => 2.1,
-                                2 => 7.0,
-                                _ => 0.5
+                                1 => 6.0,
+                                2 => 16.0,
+                                _ => 2.0
                             };
                             phase = (phase + step) % 360.0;
                         }
                         else if (_currentLedMode == LedMode.Rainbow)
                         {
-                            // Ultra-smooth flowing 3-zone rainbow wave from Left to Right (Left leads, Center, Right follows)
                             var left = HsvToRgb((phase + 100.0) % 360.0, 1.0, 1.0);
                             var center = HsvToRgb((phase + 50.0) % 360.0, 1.0, 1.0);
                             var right = HsvToRgb(phase, 1.0, 1.0);
                             _bridge.SetKeyboardTripleZone(_brightness, left, center, right);
 
-                            // Speed: 0 -> Yavaş (~0.5 deg / 14ms = ~10.0s)
-                            //        1 -> Orta (~2.1 deg / 14ms = ~2.4s - previous Fast)
-                            //        2 -> Hızlı (~7.0 deg / 14ms = ~0.72s - extra fast!)
                             double step = _cycleSpeed switch
                             {
-                                1 => 2.1,
-                                2 => 7.0,
-                                _ => 0.5
+                                1 => 6.0,
+                                2 => 16.0,
+                                _ => 2.0
                             };
                             phase = (phase + step) % 360.0;
                         }
@@ -927,14 +878,11 @@ namespace EHelper
 
                         await System.Threading.Tasks.Task.Delay(14, cts.Token);
                     }
-                    catch (System.OperationCanceledException)
+                    catch (OperationCanceledException)
                     {
                         break;
                     }
-                    catch
-                    {
-                        // Ignore transient SMI/EC errors
-                    }
+                    catch { }
                 }
             }, cts.Token);
         }
@@ -976,7 +924,9 @@ namespace EHelper
 
         #endregion
 
-        #region Theme Switcher (G-Helper Dark / Clean Light)
+        #endregion
+
+        #region Theme Switcher
 
         private void BtnThemeToggle_Click(object sender, RoutedEventArgs e)
         {
@@ -988,131 +938,575 @@ namespace EHelper
 
         private void ApplyTheme(bool isDark)
         {
+            string accentHex = _config.CurrentSettings.ThemeAccentColor ?? "#22D3EE";
+            var accent = ParseColor(accentHex, MediaColor.FromRgb(34, 211, 238));
+
             if (isDark)
             {
-                // Authentic G-Helper Matte Dark
-                Resources["WindowBg"] = new SolidColorBrush(Color.FromRgb(22, 22, 22));        // #161616
-                Resources["TileBg"] = new SolidColorBrush(Color.FromRgb(37, 37, 37));          // #252525
-                Resources["TileHoverBg"] = new SolidColorBrush(Color.FromRgb(50, 50, 50));     // #323232
-                Resources["TileBorder"] = new SolidColorBrush(Color.FromRgb(56, 56, 56));      // #383838
-                Resources["TileActiveBg"] = new SolidColorBrush(Color.FromRgb(25, 39, 56));    // #192738
-                Resources["TileActiveBorder"] = new SolidColorBrush(Color.FromRgb(0, 144, 255)); // #0090FF
-                Resources["TextPrimary"] = new SolidColorBrush(Color.FromRgb(255, 255, 255));  // #FFFFFF
-                Resources["TextSecondary"] = new SolidColorBrush(Color.FromRgb(204, 204, 204));// #CCCCCC
-                Resources["TextMuted"] = new SolidColorBrush(Color.FromRgb(142, 142, 147));    // #8E8E93
-                Resources["ProgressTrack"] = new SolidColorBrush(Color.FromRgb(42, 42, 42));   // #2A2A2A
-                Resources["AccentBlue"] = new SolidColorBrush(Color.FromRgb(0, 144, 255));     // #0090FF
-                Resources["DiagramBg"] = new SolidColorBrush(Color.FromRgb(28, 28, 28));       // #1C1C1C
-                Resources["ZoneTileBg"] = new SolidColorBrush(Color.FromRgb(38, 38, 38));      // #262626
-                Resources["ZoneTileActiveBg"] = new SolidColorBrush(Color.FromRgb(25, 39, 56));// #192738
-                Resources["ZoneTileBorder"] = new SolidColorBrush(Color.FromRgb(56, 56, 56));
-                Resources["ZoneTileActiveBorder"] = new SolidColorBrush(Color.FromRgb(0, 144, 255));
-                if (TxtThemeToggleLabel != null) TxtThemeToggleLabel.Text = LocalizationManager.ThemeLight;
-                if (IconThemePath != null) IconThemePath.Data = (Geometry)FindResource("IconSun");
+                Resources["WindowBg"] = new SolidColorBrush(MediaColor.FromRgb(20, 21, 27));       // #14151B
+                Resources["CardBg"] = new SolidColorBrush(MediaColor.FromRgb(28, 30, 38));         // #1C1E26
+                Resources["CardHoverBg"] = new SolidColorBrush(MediaColor.FromRgb(34, 37, 48));    // #222530
+                Resources["CardBorder"] = new SolidColorBrush(MediaColor.FromRgb(37, 40, 52));     // #252834
+                Resources["CardActiveBg"] = new SolidColorBrush(MediaColor.FromArgb(50, accent.R, accent.G, accent.B));
+                Resources["CardActiveBorder"] = new SolidColorBrush(accent);
+                Resources["TextPrimary"] = new SolidColorBrush(MediaColor.FromRgb(255, 255, 255));
+                Resources["TextSecondary"] = new SolidColorBrush(MediaColor.FromRgb(212, 215, 226));
+                Resources["TextMuted"] = new SolidColorBrush(MediaColor.FromRgb(101, 106, 123));   // #656A7B
+                Resources["ProgressTrack"] = new SolidColorBrush(MediaColor.FromRgb(37, 40, 52));
+                Resources["AccentColor"] = new SolidColorBrush(accent);
+                Resources["AccentCyan"] = new SolidColorBrush(MediaColor.FromRgb(34, 211, 238));   // #22D3EE (CPU dot)
+                Resources["AccentGreen"] = new SolidColorBrush(MediaColor.FromRgb(74, 222, 128));  // #4ADE80
+                Resources["AccentAmber"] = new SolidColorBrush(MediaColor.FromRgb(245, 158, 11));  // #F59E0B
+                Resources["SegmentBg"] = new SolidColorBrush(MediaColor.FromRgb(30, 32, 42));      // #1E202A
+                Resources["SegmentBorder"] = new SolidColorBrush(MediaColor.FromRgb(46, 50, 66));  // #2E3242
+                Resources["SegmentActiveBg"] = new SolidColorBrush(MediaColor.FromArgb(60, accent.R, accent.G, accent.B));
+                Resources["SegmentActiveBorder"] = new SolidColorBrush(accent);
+                Resources["BadgeBg"] = new SolidColorBrush(MediaColor.FromRgb(34, 36, 47));        // #22242F
+                Resources["BadgeBorder"] = new SolidColorBrush(MediaColor.FromRgb(45, 49, 63));    // #2D313F
+                Resources["BtnUpdateBg"] = new SolidColorBrush(MediaColor.FromArgb(70, accent.R, accent.G, accent.B));
+                Resources["BtnUpdateBorder"] = new SolidColorBrush(accent);
+                Resources["BtnUpdateFg"] = new SolidColorBrush(MediaColor.FromRgb(255, 255, 255));
+
+                if (IconThemePath != null)
+                {
+                    IconThemePath.Data = (Geometry)FindResource("IconSun");
+                    IconThemePath.SetResourceReference(System.Windows.Shapes.Path.StrokeProperty, "TextMuted");
+                    IconThemePath.Fill = Brushes.Transparent;
+                }
             }
             else
             {
-                // Clean High-Contrast Light
-                Resources["WindowBg"] = new SolidColorBrush(Color.FromRgb(242, 242, 247));     // #F2F2F7
-                Resources["TileBg"] = new SolidColorBrush(Color.FromRgb(255, 255, 255));       // #FFFFFF
-                Resources["TileHoverBg"] = new SolidColorBrush(Color.FromRgb(235, 235, 240));  // #EBEBF0
-                Resources["TileBorder"] = new SolidColorBrush(Color.FromRgb(209, 209, 214));   // #D1D1D6
-                Resources["TileActiveBg"] = new SolidColorBrush(Color.FromRgb(225, 239, 255)); // #E1EFFF
-                Resources["TileActiveBorder"] = new SolidColorBrush(Color.FromRgb(0, 122, 255)); // #007AFF
-                Resources["TextPrimary"] = new SolidColorBrush(Color.FromRgb(0, 0, 0));        // #000000
-                Resources["TextSecondary"] = new SolidColorBrush(Color.FromRgb(60, 60, 67));   // #3C3C43
-                Resources["TextMuted"] = new SolidColorBrush(Color.FromRgb(142, 142, 147));    // #8E8E93
-                Resources["ProgressTrack"] = new SolidColorBrush(Color.FromRgb(229, 229, 234));
-                Resources["AccentBlue"] = new SolidColorBrush(Color.FromRgb(0, 122, 255));     // #007AFF
-                Resources["DiagramBg"] = new SolidColorBrush(Color.FromRgb(240, 240, 244));     // #F0F0F4
-                Resources["ZoneTileBg"] = new SolidColorBrush(Color.FromRgb(255, 255, 255));   // #FFFFFF
-                Resources["ZoneTileActiveBg"] = new SolidColorBrush(Color.FromRgb(225, 239, 255)); // #E1EFFF
-                Resources["ZoneTileBorder"] = new SolidColorBrush(Color.FromRgb(209, 209, 214));
-                Resources["ZoneTileActiveBorder"] = new SolidColorBrush(Color.FromRgb(0, 122, 255));
-                if (TxtThemeToggleLabel != null) TxtThemeToggleLabel.Text = LocalizationManager.ThemeDark;
-                if (IconThemePath != null) IconThemePath.Data = (Geometry)FindResource("IconMoon");
+                Resources["WindowBg"] = new SolidColorBrush(MediaColor.FromRgb(248, 250, 252));
+                Resources["CardBg"] = new SolidColorBrush(MediaColor.FromRgb(255, 255, 255));
+                Resources["CardHoverBg"] = new SolidColorBrush(MediaColor.FromRgb(241, 245, 249));
+                Resources["CardBorder"] = new SolidColorBrush(MediaColor.FromRgb(226, 232, 240));
+                Resources["CardActiveBg"] = new SolidColorBrush(MediaColor.FromArgb(30, accent.R, accent.G, accent.B));
+                Resources["CardActiveBorder"] = new SolidColorBrush(accent);
+                Resources["TextPrimary"] = new SolidColorBrush(MediaColor.FromRgb(15, 23, 42));
+                Resources["TextSecondary"] = new SolidColorBrush(MediaColor.FromRgb(51, 65, 85));
+                Resources["TextMuted"] = new SolidColorBrush(MediaColor.FromRgb(100, 116, 139));
+                Resources["ProgressTrack"] = new SolidColorBrush(MediaColor.FromRgb(226, 232, 240));
+                Resources["AccentColor"] = new SolidColorBrush(accent);
+                Resources["AccentCyan"] = new SolidColorBrush(MediaColor.FromRgb(2, 132, 199));
+                Resources["AccentGreen"] = new SolidColorBrush(MediaColor.FromRgb(22, 163, 74));
+                Resources["AccentAmber"] = new SolidColorBrush(MediaColor.FromRgb(217, 119, 6));
+                Resources["SegmentBg"] = new SolidColorBrush(MediaColor.FromRgb(248, 250, 252));
+                Resources["SegmentBorder"] = new SolidColorBrush(MediaColor.FromRgb(203, 213, 225));
+                Resources["SegmentActiveBg"] = new SolidColorBrush(MediaColor.FromArgb(40, accent.R, accent.G, accent.B));
+                Resources["SegmentActiveBorder"] = new SolidColorBrush(accent);
+                Resources["BadgeBg"] = new SolidColorBrush(MediaColor.FromRgb(241, 245, 249));
+                Resources["BadgeBorder"] = new SolidColorBrush(MediaColor.FromRgb(203, 213, 225));
+                Resources["BtnUpdateBg"] = new SolidColorBrush(accent);
+                Resources["BtnUpdateBorder"] = new SolidColorBrush(accent);
+                Resources["BtnUpdateFg"] = new SolidColorBrush(MediaColor.FromRgb(255, 255, 255));
+
+                if (IconThemePath != null)
+                {
+                    IconThemePath.Data = (Geometry)FindResource("IconMoon");
+                    IconThemePath.SetResourceReference(System.Windows.Shapes.Path.FillProperty, "TextMuted");
+                    IconThemePath.Stroke = Brushes.Transparent;
+                }
             }
 
-            UpdateTripleZoneUI();
+            if (System.Windows.Application.Current != null)
+            {
+                System.Windows.Application.Current.Resources["CardBg"] = Resources["CardBg"];
+                System.Windows.Application.Current.Resources["CardHoverBg"] = Resources["CardHoverBg"];
+                System.Windows.Application.Current.Resources["CardBorder"] = Resources["CardBorder"];
+                System.Windows.Application.Current.Resources["CardActiveBorder"] = Resources["CardActiveBorder"];
+                System.Windows.Application.Current.Resources["CardActiveBg"] = Resources["CardActiveBg"];
+                System.Windows.Application.Current.Resources["TextPrimary"] = Resources["TextPrimary"];
+                System.Windows.Application.Current.Resources["TextSecondary"] = Resources["TextSecondary"];
+                System.Windows.Application.Current.Resources["TextMuted"] = Resources["TextMuted"];
+                System.Windows.Application.Current.Resources["AccentColor"] = Resources["AccentColor"];
+            }
+
+            var accentBrush = Resources["AccentColor"] as SolidColorBrush;
+            if (accentBrush != null)
+            {
+                if (PbRamUsage != null) PbRamUsage.Foreground = accentBrush;
+                if (PbSsdUsage != null) PbSsdUsage.Foreground = accentBrush;
+                if (TxtRamPercent != null) TxtRamPercent.Foreground = accentBrush;
+                if (TxtSsdPercent != null) TxtSsdPercent.Foreground = accentBrush;
+                if (IconRamPath != null) IconRamPath.Stroke = accentBrush;
+                if (IconDiskPath != null) IconDiskPath.Stroke = accentBrush;
+            }
+
+            UpdatePowerModeButtonsUI();
+            HighlightBrightnessButtons(_brightness);
+            HighlightSpeedButtons(_cycleSpeed);
+        }
+
+        private static MediaColor ParseColor(string hex, MediaColor fallback)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(hex)) return fallback;
+                string clean = hex.Trim().TrimStart('#');
+                if (clean.Length == 6 &&
+                    byte.TryParse(clean.Substring(0, 2), NumberStyles.HexNumber, null, out byte r) &&
+                    byte.TryParse(clean.Substring(2, 2), NumberStyles.HexNumber, null, out byte g) &&
+                    byte.TryParse(clean.Substring(4, 2), NumberStyles.HexNumber, null, out byte b))
+                {
+                    return MediaColor.FromRgb(r, g, b);
+                }
+            }
+            catch { }
+            return fallback;
         }
 
         #endregion
 
-        #region Extra Actions & Settings
+        #region Profile Management & Custom Presets
 
-        private void BtnRefreshTelemetry_Click(object sender, RoutedEventArgs e)
+        public void EnterProfileSetupMode(AppProfile? existingProfile = null)
         {
-            var telemetry = _bridge.GetTelemetry();
-            UpdateTelemetryUI(telemetry);
-            UpdateSystemResourcesUI();
+            _editingProfile = existingProfile;
+            _isProfileSetupMode = true;
+
+            if (existingProfile != null)
+            {
+                // Pre-load existing profile settings into UI
+                _currentPowerMode = existingProfile.PowerMode;
+                _currentLedMode = existingProfile.LedMode;
+                _brightness = existingProfile.LedBrightness;
+                _cycleSpeed = existingProfile.CycleSpeed;
+                _red = existingProfile.Red;
+                _green = existingProfile.Green;
+                _blue = existingProfile.Blue;
+                _zoneLeftR = existingProfile.ZoneLeftRed;
+                _zoneLeftG = existingProfile.ZoneLeftGreen;
+                _zoneLeftB = existingProfile.ZoneLeftBlue;
+                _zoneCenterR = existingProfile.ZoneCenterRed;
+                _zoneCenterG = existingProfile.ZoneCenterGreen;
+                _zoneCenterB = existingProfile.ZoneCenterBlue;
+                _zoneRightR = existingProfile.ZoneRightRed;
+                _zoneRightG = existingProfile.ZoneRightGreen;
+                _zoneRightB = existingProfile.ZoneRightBlue;
+
+                UpdatePowerModeButtonsUI();
+                HighlightBrightnessButtons(_brightness);
+                HighlightSpeedButtons(_cycleSpeed);
+                UpdateLedModeButtonsUI();
+                UpdateColorSwatches();
+            }
+
+            TxtProfileSetupBannerTitle.Text = LocalizationManager.ProfileSetupBannerTitle;
+            TxtProfileSetupBannerDesc.Text = LocalizationManager.ProfileSetupBannerDesc;
+            BtnConfirmProfileSettings.Content = $"✓ {LocalizationManager.ConfirmSettings}";
+            BtnCancelProfileSettings.Content = LocalizationManager.Cancel;
+            PnlProfileSetupBanner.Visibility = Visibility.Visible;
+
+            if (!IsVisible)
+            {
+                ToggleFlyout();
+            }
+            else
+            {
+                Activate();
+                Focus();
+            }
         }
 
-        private void ChkAutoStart_Changed(object sender, RoutedEventArgs e)
+        private void BtnConfirmProfileSettings_Click(object sender, RoutedEventArgs e)
         {
-            if (!_isInitialized || ChkAutoStart == null || _config == null) return;
-            bool enable = ChkAutoStart.IsChecked == true;
-            StartupManager.SetStartup(enable);
-            _config.CurrentSettings.StartWithWindows = enable;
-            _config.SaveSettings();
+            PnlProfileSetupBanner.Visibility = Visibility.Collapsed;
+            _isProfileSetupMode = false;
+
+            var profile = _editingProfile?.Clone() ?? new AppProfile();
+            profile.PowerMode = _currentPowerMode;
+            profile.LedMode = _currentLedMode;
+            profile.LedBrightness = _brightness;
+            profile.CycleSpeed = _cycleSpeed;
+            profile.Red = _red;
+            profile.Green = _green;
+            profile.Blue = _blue;
+            profile.ZoneLeftRed = _zoneLeftR;
+            profile.ZoneLeftGreen = _zoneLeftG;
+            profile.ZoneLeftBlue = _zoneLeftB;
+            profile.ZoneCenterRed = _zoneCenterR;
+            profile.ZoneCenterGreen = _zoneCenterG;
+            profile.ZoneCenterBlue = _zoneCenterB;
+            profile.ZoneRightRed = _zoneRightR;
+            profile.ZoneRightGreen = _zoneRightG;
+            profile.ZoneRightBlue = _zoneRightB;
+
+            bool isNew = _editingProfile == null;
+            var editWin = new ProfileEditWindow(profile, isNew, _isDarkTheme, _config.CurrentSettings.ThemeAccentColor)
+            {
+                Owner = this
+            };
+            PositionToLeftOf(editWin);
+
+            if (editWin.ShowDialog() == true)
+            {
+                if (isNew)
+                {
+                    _config.CurrentSettings.Profiles.Add(profile);
+                }
+                else if (_editingProfile != null)
+                {
+                    _editingProfile.Name = profile.Name;
+                    _editingProfile.ProcessName = profile.ProcessName;
+                    _editingProfile.AppPath = profile.AppPath;
+                    _editingProfile.PowerMode = profile.PowerMode;
+                    _editingProfile.LedMode = profile.LedMode;
+                    _editingProfile.LedBrightness = profile.LedBrightness;
+                    _editingProfile.CycleSpeed = profile.CycleSpeed;
+                    _editingProfile.Red = profile.Red;
+                    _editingProfile.Green = profile.Green;
+                    _editingProfile.Blue = profile.Blue;
+                    _editingProfile.ZoneLeftRed = profile.ZoneLeftRed;
+                    _editingProfile.ZoneLeftGreen = profile.ZoneLeftGreen;
+                    _editingProfile.ZoneLeftBlue = profile.ZoneLeftBlue;
+                    _editingProfile.ZoneCenterRed = profile.ZoneCenterRed;
+                    _editingProfile.ZoneCenterGreen = profile.ZoneCenterGreen;
+                    _editingProfile.ZoneCenterBlue = profile.ZoneCenterBlue;
+                    _editingProfile.ZoneRightRed = profile.ZoneRightRed;
+                    _editingProfile.ZoneRightGreen = profile.ZoneRightGreen;
+                    _editingProfile.ZoneRightBlue = profile.ZoneRightBlue;
+                }
+                _config.SaveSettings();
+                _editingProfile = null;
+                OpenSettingsWindow();
+            }
+            else if (editWin.RecaptureRequested)
+            {
+                EnterProfileSetupMode(profile);
+            }
+            else
+            {
+                _editingProfile = null;
+            }
+        }
+
+        private void BtnCancelProfileSettings_Click(object sender, RoutedEventArgs e)
+        {
+            PnlProfileSetupBanner.Visibility = Visibility.Collapsed;
+            _isProfileSetupMode = false;
+            _editingProfile = null;
+        }
+
+        public void ApplyProfile(AppProfile profile)
+        {
+            if (profile == null || _isProfileSetupMode) return;
+
+            if (_snapshotBeforeProfile == null)
+            {
+                _snapshotBeforeProfile = new AppProfile
+                {
+                    PowerMode = _currentPowerMode,
+                    LedMode = _currentLedMode,
+                    LedBrightness = _brightness,
+                    CycleSpeed = _cycleSpeed,
+                    Red = _red,
+                    Green = _green,
+                    Blue = _blue,
+                    ZoneLeftRed = _zoneLeftR,
+                    ZoneLeftGreen = _zoneLeftG,
+                    ZoneLeftBlue = _zoneLeftB,
+                    ZoneCenterRed = _zoneCenterR,
+                    ZoneCenterGreen = _zoneCenterG,
+                    ZoneCenterBlue = _zoneCenterB,
+                    ZoneRightRed = _zoneRightR,
+                    ZoneRightGreen = _zoneRightG,
+                    ZoneRightBlue = _zoneRightB
+                };
+            }
+
+            _activeProfileName = profile.Name;
+
+            _currentPowerMode = profile.PowerMode;
+            _bridge.SetPowerMode(_currentPowerMode);
+            ExcaliburPowerPlan.ApplyPowerPlan(_currentPowerMode);
+            UpdatePowerModeButtonsUI();
+
+            _currentLedMode = profile.LedMode;
+            _brightness = profile.LedBrightness;
+            _cycleSpeed = profile.CycleSpeed;
+            _red = profile.Red;
+            _green = profile.Green;
+            _blue = profile.Blue;
+            _zoneLeftR = profile.ZoneLeftRed;
+            _zoneLeftG = profile.ZoneLeftGreen;
+            _zoneLeftB = profile.ZoneLeftBlue;
+            _zoneCenterR = profile.ZoneCenterRed;
+            _zoneCenterG = profile.ZoneCenterGreen;
+            _zoneCenterB = profile.ZoneCenterBlue;
+            _zoneRightR = profile.ZoneRightRed;
+            _zoneRightG = profile.ZoneRightGreen;
+            _zoneRightB = profile.ZoneRightBlue;
+
+            HighlightBrightnessButtons(_brightness);
+            HighlightSpeedButtons(_cycleSpeed);
+            UpdateLedModeButtonsUI();
+            UpdateColorSwatches();
+            ApplyLedHardwareOnly();
+
+            if (TxtModelStatus != null)
+            {
+                TxtModelStatus.Text = $" {LocalizationManager.ProfileActivated}{profile.Name}";
+                if (Resources["AccentCyan"] is Brush accentBrush)
+                {
+                    TxtModelStatus.Foreground = accentBrush;
+                }
+            }
+        }
+
+        public void RestoreDefaultSettings()
+        {
+            if (_isProfileSetupMode) return;
+
+            _activeProfileName = null;
+
+            var s = _snapshotBeforeProfile;
+            _snapshotBeforeProfile = null;
+
+            if (s == null)
+            {
+                var cfg = _config.CurrentSettings;
+                s = new AppProfile
+                {
+                    PowerMode = cfg.PowerMode,
+                    LedMode = cfg.LedMode,
+                    LedBrightness = cfg.LedBrightness,
+                    CycleSpeed = cfg.CycleSpeed,
+                    Red = cfg.Red,
+                    Green = cfg.Green,
+                    Blue = cfg.Blue,
+                    ZoneLeftRed = cfg.ZoneLeftRed,
+                    ZoneLeftGreen = cfg.ZoneLeftGreen,
+                    ZoneLeftBlue = cfg.ZoneLeftBlue,
+                    ZoneCenterRed = cfg.ZoneCenterRed,
+                    ZoneCenterGreen = cfg.ZoneCenterGreen,
+                    ZoneCenterBlue = cfg.ZoneCenterBlue,
+                    ZoneRightRed = cfg.ZoneRightRed,
+                    ZoneRightGreen = cfg.ZoneRightGreen,
+                    ZoneRightBlue = cfg.ZoneRightBlue
+                };
+            }
+
+            _currentPowerMode = s.PowerMode;
+            _bridge.SetPowerMode(_currentPowerMode);
+            ExcaliburPowerPlan.ApplyPowerPlan(_currentPowerMode);
+            _config.CurrentSettings.PowerMode = _currentPowerMode;
+            UpdatePowerModeButtonsUI();
+
+            _currentLedMode = s.LedMode;
+            _brightness = s.LedBrightness;
+            _cycleSpeed = s.CycleSpeed;
+            _red = s.Red;
+            _green = s.Green;
+            _blue = s.Blue;
+            _zoneLeftR = s.ZoneLeftRed;
+            _zoneLeftG = s.ZoneLeftGreen;
+            _zoneLeftB = s.ZoneLeftBlue;
+            _zoneCenterR = s.ZoneCenterRed;
+            _zoneCenterG = s.ZoneCenterGreen;
+            _zoneCenterB = s.ZoneCenterBlue;
+            _zoneRightR = s.ZoneRightRed;
+            _zoneRightG = s.ZoneRightGreen;
+            _zoneRightB = s.ZoneRightBlue;
+
+            HighlightBrightnessButtons(_brightness);
+            HighlightSpeedButtons(_cycleSpeed);
+            UpdateLedModeButtonsUI();
+            UpdateColorSwatches();
+            ApplyLedSettings();
+
+            if (TxtModelStatus != null)
+            {
+                TxtModelStatus.Text = $" {LocalizationManager.UpToDate}";
+                if (Resources["TextMuted"] is Brush mutedBrush)
+                {
+                    TxtModelStatus.Foreground = mutedBrush;
+                }
+            }
+        }
+
+        #endregion
+
+        #region Localization & Settings Modal
+
+        private void BtnSettings_Click(object sender, RoutedEventArgs e)
+        {
+            OpenSettingsWindow();
+        }
+
+        public void PositionToLeftOf(Window targetWindow)
+        {
+            targetWindow.WindowStartupLocation = WindowStartupLocation.Manual;
+            var workArea = SystemParameters.WorkArea;
+
+            double targetW = targetWindow.Width > 0 ? targetWindow.Width : 390;
+            targetWindow.Measure(new System.Windows.Size(targetW, double.PositiveInfinity));
+            double targetH = targetWindow.DesiredSize.Height > 0 ? targetWindow.DesiredSize.Height : 450;
+
+            double ownerW = ActualWidth > 0 ? ActualWidth : (!double.IsNaN(Width) && Width > 0 ? Width : 435);
+            double ownerH = ActualHeight > 0 ? ActualHeight : (!double.IsNaN(Height) && Height > 0 ? Height : 660);
+
+            // 1. Calculate horizontal position (place directly to the left of MainWindow with 12px gap)
+            double targetLeft = Left - targetW - 12;
+            if (targetLeft < workArea.Left + 8)
+            {
+                // If not enough room on the left, check if right side has room
+                double rightSide = Left + ownerW + 12;
+                if (rightSide + targetW <= workArea.Right - 8)
+                {
+                    targetLeft = rightSide;
+                }
+                else
+                {
+                    targetLeft = Math.Max(workArea.Left + 8, Left - targetW);
+                }
+            }
+
+            // 2. Calculate vertical position (vertically centered relative to MainWindow, clamped within workArea)
+            double targetTop = Top + (ownerH - targetH) / 2;
+            targetTop = Math.Max(workArea.Top + 8, Math.Min(targetTop, workArea.Bottom - targetH - 8));
+
+            targetWindow.Left = targetLeft;
+            targetWindow.Top = targetTop;
+        }
+
+        private void OpenSettingsWindow()
+        {
+            var settingsWin = new SettingsWindow(_config, _isDarkTheme)
+            {
+                Owner = this
+            };
+            PositionToLeftOf(settingsWin);
+
+            settingsWin.AccentColorChanged += (newHex) =>
+            {
+                ApplyTheme(_isDarkTheme);
+            };
+            settingsWin.RecaptureRequested += (profileToRecapture) =>
+            {
+                EnterProfileSetupMode(profileToRecapture);
+            };
+            settingsWin.ShowDialog();
+
+            if (settingsWin.RequestProfileCreation)
+            {
+                EnterProfileSetupMode(null);
+            }
         }
 
         private void ApplyLocalization()
         {
-            if (TxtModeOfficeLabel != null) TxtModeOfficeLabel.Text = LocalizationManager.PowerOffice;
-            if (TxtModeGamingLabel != null) TxtModeGamingLabel.Text = LocalizationManager.PowerGaming;
-            if (TxtModeHighPerfLabel != null) TxtModeHighPerfLabel.Text = LocalizationManager.PowerTurbo;
+            TxtHeaderPowerOptions.Text = LocalizationManager.PowerOptionsHeader;
+            TxtPowerOfficeTitle.Text = LocalizationManager.PowerOffice;
+            TxtPowerOfficeSub.Text = LocalizationManager.PowerOfficeSub;
+            TxtPowerGamingTitle.Text = LocalizationManager.PowerGaming;
+            TxtPowerGamingSub.Text = LocalizationManager.PowerGamingSub;
+            TxtPowerTurboTitle.Text = LocalizationManager.PowerTurbo;
+            TxtPowerTurboSub.Text = LocalizationManager.PowerTurboSub;
 
-            if (TxtGpuHeader != null) TxtGpuHeader.Text = LocalizationManager.GpuHeader;
-            if (TxtSysResourcesHeader != null) TxtSysResourcesHeader.Text = LocalizationManager.SystemResourcesHeader;
-            if (TxtRamHeader != null) TxtRamHeader.Text = LocalizationManager.RamLabel;
-            if (TxtSsdHeader != null) TxtSsdHeader.Text = LocalizationManager.SsdLabel;
+            TxtHeaderSystemResources.Text = LocalizationManager.SystemResourcesHeader;
+            TxtCpuHeader.Text = LocalizationManager.CpuHeader;
+            TxtGpuHeader.Text = LocalizationManager.GpuCardHeader;
+            TxtCpuUsageLabel.Text = LocalizationManager.UsageLabel;
+            TxtGpuUsageLabel.Text = LocalizationManager.UsageLabel;
+            TxtCpuFanLabel.Text = LocalizationManager.FanLabel;
+            TxtGpuFanLabel.Text = LocalizationManager.FanLabel;
+            TxtRamLabel.Text = LocalizationManager.RamBellek;
+            TxtSsdLabel.Text = LocalizationManager.SsdDepolama;
 
-            if (TxtKeyboardHeader != null) TxtKeyboardHeader.Text = LocalizationManager.KeyboardHeader;
-            if (LblBrightnessHeader != null) LblBrightnessHeader.Text = LocalizationManager.BrightnessLabel;
-            if (LblBrightnessTitle != null) LblBrightnessTitle.Text = LocalizationManager.BrightnessSliderTitle;
+            TxtHeaderRgb.Text = LocalizationManager.RgbKeyboardHeader;
+            TxtItemRainbowLabel.Text = LocalizationManager.LedRainbow;
+            TxtItemCycleLabel.Text = LocalizationManager.LedCycle;
+            TxtItemStaticLabel.Text = LocalizationManager.LedStatic;
+            TxtItemBreathingLabel.Text = LocalizationManager.LedBreathing;
+            TxtItemDynamicLabel.Text = LocalizationManager.LedDynamic;
+            TxtItemTripleZoneLabel.Text = LocalizationManager.LedTripleZone;
 
-            if (TxtItemStaticLabel != null) TxtItemStaticLabel.Text = LocalizationManager.LedStatic;
-            if (TxtItemBreathingLabel != null) TxtItemBreathingLabel.Text = LocalizationManager.LedBreathing;
-            if (TxtItemDynamicLabel != null) TxtItemDynamicLabel.Text = LocalizationManager.LedDynamic;
-            if (TxtItemCycleLabel != null) TxtItemCycleLabel.Text = LocalizationManager.LedCycle;
-            if (TxtItemRainbowLabel != null) TxtItemRainbowLabel.Text = LocalizationManager.LedRainbow;
-            if (TxtItemTripleZoneLabel != null) TxtItemTripleZoneLabel.Text = LocalizationManager.LedTripleZone;
+            TxtBrightnessTitle.Text = LocalizationManager.BrightnessSliderTitle;
+            BtnSpeedSlow.Content = LocalizationManager.SpeedSlow;
+            BtnSpeedMedium.Content = LocalizationManager.SpeedMedium;
+            BtnSpeedFast.Content = LocalizationManager.SpeedFast;
 
-            if (TxtModeColorActionLabel != null) TxtModeColorActionLabel.Text = LocalizationManager.ColorLabel;
+            TxtZoneLeftLabel.Text = LocalizationManager.ZoneLeftShort;
+            TxtZoneCenterLabel.Text = LocalizationManager.ZoneCenterShort;
+            TxtZoneRightLabel.Text = LocalizationManager.ZoneRightShort;
 
-            if (TxtDiagramTitle != null) TxtDiagramTitle.Text = LocalizationManager.KeyboardDiagramTitle;
-            if (LblZoneLeft != null)
+            BtnUpdateAction.Content = LocalizationManager.UpdateNow;
+            TxtExitLabel.Text = LocalizationManager.Exit;
+            TxtLangCode.Text = LocalizationManager.CurrentLanguage;
+
+            BtnClose.ToolTip = LocalizationManager.CloseTooltip;
+            BtnSettings.ToolTip = LocalizationManager.SettingsTitle;
+            BtnThemeToggle.ToolTip = LocalizationManager.ThemeTooltip;
+            BtnLangToggle.ToolTip = LocalizationManager.LanguageTooltip;
+            BtnExitApp.ToolTip = LocalizationManager.Exit;
+
+            if (TxtProfileSetupBannerTitle != null)
             {
-                LblZoneLeft.Text = LocalizationManager.IsTurkish ? "Sol" : "Left";
+                TxtProfileSetupBannerTitle.Text = LocalizationManager.ProfileSetupBannerTitle;
             }
-            if (LblZoneCenter != null)
+            if (TxtProfileSetupBannerDesc != null)
             {
-                LblZoneCenter.Text = LocalizationManager.IsTurkish ? "Orta" : "Center";
+                TxtProfileSetupBannerDesc.Text = LocalizationManager.ProfileSetupBannerDesc;
             }
-            if (LblZoneRight != null)
+            if (BtnConfirmProfileSettings != null)
             {
-                LblZoneRight.Text = LocalizationManager.IsTurkish ? "Sağ" : "Right";
+                BtnConfirmProfileSettings.Content = $"✓ {LocalizationManager.ConfirmSettings}";
             }
-            UpdateTripleZoneUI();
-
-            if (ChkAutoStart != null) ChkAutoStart.Content = LocalizationManager.AutoStart;
-            if (TxtExitAppLabel != null) TxtExitAppLabel.Text = LocalizationManager.Exit;
-            if (TxtLangToggleLabel != null) TxtLangToggleLabel.Text = LocalizationManager.LangButton;
-
-            if (TxtThemeToggleLabel != null)
+            if (BtnCancelProfileSettings != null)
             {
-                TxtThemeToggleLabel.Text = _isDarkTheme ? LocalizationManager.ThemeLight : LocalizationManager.ThemeDark;
-            }
-            if (IconThemePath != null)
-            {
-                IconThemePath.Data = _isDarkTheme ? (Geometry)FindResource("IconSun") : (Geometry)FindResource("IconMoon");
+                BtnCancelProfileSettings.Content = LocalizationManager.Cancel;
             }
 
-            if (LblCycleSpeedTitle != null) LblCycleSpeedTitle.Text = LocalizationManager.CycleSpeedTitle;
-            UpdateBrightnessUI();
-            UpdateCycleSpeedUI();
+            if (TxtModelStatus != null)
+            {
+                if (!string.IsNullOrEmpty(_activeProfileName))
+                {
+                    TxtModelStatus.Text = $" {LocalizationManager.ProfileActivated}{_activeProfileName}";
+                    if (Resources["AccentCyan"] is Brush accentBrush)
+                    {
+                        TxtModelStatus.Foreground = accentBrush;
+                    }
+                }
+                else
+                {
+                    TxtModelStatus.Text = $" {LocalizationManager.UpToDate}";
+                    if (Resources["TextMuted"] is Brush mutedBrush)
+                    {
+                        TxtModelStatus.Foreground = mutedBrush;
+                    }
+                }
+            }
+
+            UpdatePowerModeButtonsUI();
+            UpdateLedModeButtonsUI();
             UpdateUpdateStatusUI();
         }
+
+        private void BtnLangToggle_Click(object sender, RoutedEventArgs e)
+        {
+            string nextLang = LocalizationManager.IsTurkish ? "EN" : "TR";
+            LocalizationManager.CurrentLanguage = nextLang;
+            _config.CurrentSettings.Language = nextLang;
+            _config.SaveSettings();
+
+            ApplyLocalization();
+        }
+
+        private void BtnExitApp_Click(object sender, RoutedEventArgs e)
+        {
+            if (System.Windows.Application.Current is App app)
+            {
+                app.ShutdownApp();
+            }
+            else
+            {
+                System.Windows.Application.Current.Shutdown();
+            }
+        }
+
+        #endregion
+
+        #region Update Management
 
         private void TriggerBackgroundUpdateCheck()
         {
@@ -1129,33 +1523,40 @@ namespace EHelper
 
         private void UpdateUpdateStatusUI()
         {
-            if (RunUpdateStatus == null || TxtUpdateStatus == null) return;
+            if (CardUpdateBanner == null || TxtModelStatus == null) return;
 
             if (_isUpdating)
             {
-                RunUpdateStatus.Text = LocalizationManager.UpdatingStatus;
-                TxtUpdateStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(245, 158, 11)); // Amber
+                CardUpdateBanner.Visibility = Visibility.Visible;
+                TxtUpdateBannerMessage.Text = LocalizationManager.UpdatingStatus;
+                BtnUpdateAction.IsEnabled = false;
+                TxtModelStatus.Text = "";
                 return;
             }
 
             if (_latestUpdateResult != null && _latestUpdateResult.HasUpdate)
             {
-                // Update available: Red text e.g. "İndir: 0.283.0 → 0.285"
-                string prefix = LocalizationManager.DownloadPrefix;
-                RunUpdateStatus.Text = $"{prefix}{_latestUpdateResult.CurrentVersion} → {_latestUpdateResult.LatestVersion}";
-                TxtUpdateStatus.Foreground = new System.Windows.Media.SolidColorBrush(System.Windows.Media.Color.FromRgb(239, 68, 68)); // Red #EF4444
+                // Update detected: display banner, hide "- Güncel" from footer
+                CardUpdateBanner.Visibility = Visibility.Visible;
+                string ver = _latestUpdateResult.LatestVersion ?? "v1.3.0";
+                if (!ver.StartsWith("v", StringComparison.OrdinalIgnoreCase))
+                {
+                    ver = "v" + ver;
+                }
+                TxtUpdateBannerMessage.Text = $"{ver} {LocalizationManager.UpdateBannerTitle}";
+                BtnUpdateAction.Content = LocalizationManager.UpdateNow;
+                BtnUpdateAction.IsEnabled = true;
+                TxtModelStatus.Text = "";
             }
             else
             {
-                // Up to date: Muted gray text e.g. "Sürüm: 1.1.0"
-                string version = _latestUpdateResult?.CurrentVersion ?? UpdateService.CurrentVersion;
-                string prefix = LocalizationManager.VersionPrefix;
-                RunUpdateStatus.Text = $"{prefix}{version}";
-                TxtUpdateStatus.SetResourceReference(TextBlock.ForegroundProperty, "TextMuted");
+                // No update or up-to-date: hide banner, show "- Güncel" in footer
+                CardUpdateBanner.Visibility = Visibility.Collapsed;
+                TxtModelStatus.Text = $" {LocalizationManager.UpToDate}";
             }
         }
 
-        private async void TxtUpdateStatus_Click(object sender, System.Windows.Input.MouseButtonEventArgs e)
+        private async void BtnUpdateAction_Click(object sender, RoutedEventArgs e)
         {
             if (_isUpdating) return;
 
@@ -1169,37 +1570,12 @@ namespace EHelper
                 {
                     _isUpdating = false;
                     UpdateUpdateStatusUI();
-                    // Fallback to browser or dialog if silent update failed
                     await UpdateService.CheckForUpdatesAsync(LocalizationManager.IsTurkish == false, this);
                 }
             }
             else
             {
-                // Up-to-date or manual refresh check
                 await UpdateService.CheckForUpdatesAsync(LocalizationManager.IsTurkish == false, this);
-            }
-        }
-
-        private void BtnLangToggle_Click(object sender, RoutedEventArgs e)
-        {
-            string nextLang = LocalizationManager.IsTurkish ? "EN" : "TR";
-            LocalizationManager.CurrentLanguage = nextLang;
-            _config.CurrentSettings.Language = nextLang;
-            _config.SaveSettings();
-
-            ApplyLocalization();
-            UpdatePowerModeButtonsUI();
-        }
-
-        private void BtnExitApp_Click(object sender, RoutedEventArgs e)
-        {
-            if (System.Windows.Application.Current is App app)
-            {
-                app.ShutdownApp();
-            }
-            else
-            {
-                System.Windows.Application.Current.Shutdown();
             }
         }
 

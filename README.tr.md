@@ -31,7 +31,7 @@ ASUS ekosisteminde devrim yaratan **G-Helper** felsefesi temel alınarak gelişt
 
 ## 📊 Orijinal Control Center ile E-Helper Karşılaştırması
 
-| Özellik / Kriter | Orijinal Üretici Yazılımı | E-Helper (v1.2.0) |
+| Özellik / Kriter | Orijinal Üretici Yazılımı | E-Helper (v1.3.0) |
 | :--- | :---: | :---: |
 | **RAM Tüketimi (Tepside / Boşta)** | 150 MB – 350 MB (Bellek sızıntılarıyla 450 MB+ üzerine çıkabilir) | **5 MB – 10 MB** |
 | **RAM Tüketimi (Pencere Açıkken)** | 250 MB – 500 MB | **30 MB – 50 MB** (Otomatik bellek kümeleme optimizasyonu) |
@@ -98,7 +98,7 @@ ASUS ekosisteminde devrim yaratan **G-Helper** felsefesi temel alınarak gelişt
 
 ### 5. 🔄 Dikişsiz Otomatik Güncelleyici
 * **Sıfır Gecikmeli Arka Plan Kontrolü:** E-Helper her açılışta arka planda GitHub Releases üzerinden en güncel sürümü kontrol eder; açılış hızını asla etkilemez (0 ms gecikme).
-* **Etkileşimli Sürüm Durumu:** Sol alt köşede anlık sürüm bilgisi (Uygulama güncelse gri `Sürüm: 1.2.0`, güncelleme varsa kırmızı `İndir: 1.1.1 → 1.2.0`).
+* **Etkileşimli Sürüm Durumu:** Sol alt köşede anlık sürüm bilgisi (Uygulama güncelse gri `Sürüm: 1.3.0`, güncelleme varsa kırmızı `İndir: 1.2.0 → 1.3.0`).
 * **Tek Tıkla Otomatik Güncelleme:** Güncelleme bağlantısına tıklandığında son sürüm paketi arka planda otomatik olarak indirilir, açık olan uygulama kapatılır, çalıştırılabilir dosya yenilenir ve yeni sürüm anında başlatılır.
 
 ---

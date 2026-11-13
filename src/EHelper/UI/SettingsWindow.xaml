@@ -1,0 +1,380 @@
+<Window x:Class="EHelper.UI.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ayarlar"
+        Width="390"
+        MaxHeight="580"
+        SizeToContent="Height"
+        WindowStyle="None"
+        AllowsTransparency="True"
+        Background="Transparent"
+        ShowInTaskbar="False"
+        Topmost="True"
+        WindowStartupLocation="Manual"
+        ResizeMode="NoResize"
+        FontFamily="Google Sans, Inter, Roboto, Segoe UI Variable Display, Segoe UI, sans-serif"
+        UseLayoutRounding="True"
+        SnapsToDevicePixels="True"
+        TextOptions.TextFormattingMode="Display"
+        TextOptions.TextRenderingMode="ClearType"
+        MouseLeftButtonDown="Window_MouseLeftButtonDown">
+
+    <Window.Resources>
+        <!-- Theme Tokens (Default Dark) -->
+        <SolidColorBrush x:Key="WindowBg" Color="#14151B"/>
+        <SolidColorBrush x:Key="CardBg" Color="#1C1E26"/>
+        <SolidColorBrush x:Key="CardHoverBg" Color="#222530"/>
+        <SolidColorBrush x:Key="CardBorder" Color="#252834"/>
+        <SolidColorBrush x:Key="CardActiveBorder" Color="#22D3EE"/>
+        <SolidColorBrush x:Key="CardActiveBg" Color="#252834"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#D4D7E2"/>
+        <SolidColorBrush x:Key="TextMuted" Color="#656A7B"/>
+        <SolidColorBrush x:Key="AccentCyan" Color="#22D3EE"/>
+        <SolidColorBrush x:Key="AccentColor" Color="#22D3EE"/>
+        <SolidColorBrush x:Key="CheckFg" Color="#14151B"/>
+        <SolidColorBrush x:Key="BadgeBg" Color="#22242F"/>
+        <SolidColorBrush x:Key="BadgeBorder" Color="#2D313F"/>
+
+        <!-- Modern ScrollBar Thumb Style -->
+        <Style x:Key="ModernScrollBarThumb" TargetType="{x:Type Thumb}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="IsTabStop" Value="False"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type Thumb}">
+                        <Rectangle x:Name="thumbRect" RadiusX="3" RadiusY="3" Fill="{DynamicResource CardBorder}" Margin="1,0"/>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="thumbRect" Property="Fill" Value="{DynamicResource CardActiveBorder}"/>
+                            </Trigger>
+                            <Trigger Property="IsDragging" Value="True">
+                                <Setter TargetName="thumbRect" Property="Fill" Value="{DynamicResource CardActiveBorder}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Sleek ScrollBar Style -->
+        <Style TargetType="{x:Type ScrollBar}">
+            <Setter Property="OverridesDefaultStyle" Value="True"/>
+            <Setter Property="Width" Value="6"/>
+            <Setter Property="MinWidth" Value="6"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="{x:Type ScrollBar}">
+                        <Grid Background="Transparent">
+                            <Track x:Name="PART_Track" IsDirectionReversed="True">
+                                <Track.Thumb>
+                                    <Thumb Style="{StaticResource ModernScrollBarThumb}"/>
+                                </Track.Thumb>
+                            </Track>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Checkbox Style (Pixel-Perfect Solid Fill) -->
+        <Style x:Key="ModernCheckBoxStyle" TargetType="CheckBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="SnapsToDevicePixels" Value="True"/>
+            <Setter Property="UseLayoutRounding" Value="True"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="CheckBox">
+                        <Border Background="Transparent" Padding="2" SnapsToDevicePixels="True" UseLayoutRounding="True">
+                            <Grid SnapsToDevicePixels="True" UseLayoutRounding="True">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+                                
+                                <!-- Checkbox Square: Solid 18x18 with matching background and border on checked -->
+                                <Border x:Name="box" Grid.Column="0" Width="18" Height="18" 
+                                        CornerRadius="4" 
+                                        Background="{DynamicResource CardHoverBg}" 
+                                        BorderBrush="{DynamicResource CardBorder}" 
+                                        BorderThickness="1"
+                                        SnapsToDevicePixels="True"
+                                        UseLayoutRounding="True"
+                                        VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <Viewbox Width="10" Height="8" HorizontalAlignment="Center" VerticalAlignment="Center" SnapsToDevicePixels="True">
+                                        <Path x:Name="checkMark" Data="M2,7 L5.5,10.5 L12,2.5" 
+                                              Stroke="{DynamicResource CheckFg}" 
+                                              StrokeThickness="2" 
+                                              StrokeStartLineCap="Round" 
+                                              StrokeEndLineCap="Round"
+                                              StrokeLineJoin="Round"
+                                              SnapsToDevicePixels="True"
+                                              Visibility="Collapsed"/>
+                                    </Viewbox>
+                                </Border>
+
+                                <ContentPresenter Grid.Column="1" VerticalAlignment="Center"/>
+                            </Grid>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsChecked" Value="True">
+                                <Setter TargetName="box" Property="Background" Value="{DynamicResource CardActiveBorder}"/>
+                                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource CardActiveBorder}"/>
+                                <Setter TargetName="box" Property="BorderThickness" Value="1"/>
+                                <Setter TargetName="checkMark" Property="Visibility" Value="Visible"/>
+                            </Trigger>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="box" Property="BorderBrush" Value="{DynamicResource CardActiveBorder}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Close Button Style -->
+        <Style x:Key="CloseBtnStyle" TargetType="Button">
+            <Setter Property="Width" Value="24"/>
+            <Setter Property="Height" Value="24"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextMuted}"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CardHoverBg}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Modern Action Button Style -->
+        <Style x:Key="ModernBtnStyle" TargetType="Button">
+            <Setter Property="Background" Value="{DynamicResource CardHoverBg}"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="{DynamicResource CardBorder}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="Padding" Value="10,0"/>
+            <Setter Property="FontSize" Value="11"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" CornerRadius="6" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="BorderBrush" Value="{DynamicResource CardActiveBorder}"/>
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CardActiveBg}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Mini Icon Button Style (Edit & Delete) -->
+        <Style x:Key="MiniIconBtnStyle" TargetType="Button">
+            <Setter Property="Width" Value="26"/>
+            <Setter Property="Height" Value="26"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="b" Background="{TemplateBinding Background}" CornerRadius="4">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="b" Property="Background" Value="{DynamicResource CardHoverBg}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Preset Color Button Style -->
+        <Style x:Key="ColorPresetButtonStyle" TargetType="Button">
+            <Setter Property="Width" Value="28"/>
+            <Setter Property="Height" Value="28"/>
+            <Setter Property="HorizontalAlignment" Value="Center"/>
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FocusVisualStyle" Value="{x:Null}"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Grid>
+                            <Border x:Name="outerRing" Width="28" Height="28" CornerRadius="14" 
+                                    BorderBrush="Transparent" BorderThickness="2" Background="Transparent"/>
+                            <Border x:Name="colorCircle" Width="22" Height="22" CornerRadius="11" 
+                                    Background="{TemplateBinding Background}" HorizontalAlignment="Center" VerticalAlignment="Center">
+                                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="outerRing" Property="BorderBrush" Value="{DynamicResource CardActiveBorder}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <!-- Main Container with Drop Shadow -->
+    <Border Background="{DynamicResource WindowBg}"
+            BorderBrush="{DynamicResource CardBorder}"
+            BorderThickness="1"
+            CornerRadius="10"
+            Margin="8">
+        <Border.Effect>
+            <DropShadowEffect BlurRadius="18" ShadowDepth="3" Direction="270" Color="#000000" Opacity="0.55"/>
+        </Border.Effect>
+
+        <Grid Margin="16,14">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/> <!-- 0: Header -->
+                <RowDefinition Height="*"/>    <!-- 1: Settings Content (Scrollable) -->
+            </Grid.RowDefinitions>
+
+            <!-- 0: Header -->
+            <Grid Grid.Row="0" Margin="0,0,0,14">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <TextBlock x:Name="TxtTitle" Text="Ayarlar" FontSize="13" FontWeight="Bold" 
+                               Foreground="{DynamicResource TextPrimary}" VerticalAlignment="Center"/>
+                </StackPanel>
+
+                <Button x:Name="BtnClose" HorizontalAlignment="Right" Style="{StaticResource CloseBtnStyle}" Click="BtnClose_Click">
+                    <TextBlock Text="✕" FontSize="11" Foreground="{DynamicResource TextMuted}" VerticalAlignment="Center"/>
+                </Button>
+            </Grid>
+
+            <!-- 1: Content (Scrollable) -->
+            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" MaxHeight="480" FocusVisualStyle="{x:Null}">
+                <StackPanel Margin="0,0,2,0">
+                    <!-- Option 1: Start With Windows -->
+                    <Border Background="{DynamicResource CardBg}" 
+                            BorderBrush="{DynamicResource CardBorder}" 
+                            BorderThickness="1" CornerRadius="8" Padding="12,10" Margin="0,0,0,10">
+                        <CheckBox x:Name="ChkStartWithWindows" 
+                                  Style="{StaticResource ModernCheckBoxStyle}"
+                                  Checked="ChkStartWithWindows_Changed" 
+                                  Unchecked="ChkStartWithWindows_Changed">
+                            <StackPanel Margin="0,1,0,0">
+                                <TextBlock x:Name="TxtStartTitle" Text="Başlangıçta Çalıştır" FontSize="12" FontWeight="SemiBold" 
+                                           Foreground="{DynamicResource TextPrimary}"/>
+                                <TextBlock x:Name="TxtStartDesc" Text="Windows açıldığında E-Helper otomatik başlatılsın" 
+                                           FontSize="10.5" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0"/>
+                            </StackPanel>
+                        </CheckBox>
+                    </Border>
+
+                    <!-- Option 2: Application Accent Color Theme -->
+                    <Border Background="{DynamicResource CardBg}" 
+                            BorderBrush="{DynamicResource CardBorder}" 
+                            BorderThickness="1" CornerRadius="8" Padding="12,11" Margin="0,0,0,10">
+                        <StackPanel>
+                            <TextBlock x:Name="TxtThemeColorTitle" Text="Uygulama Renk Teması" FontSize="12" FontWeight="SemiBold" 
+                                       Foreground="{DynamicResource TextPrimary}"/>
+                            <TextBlock x:Name="TxtThemeColorDesc" Text="Çerçeve, vurgu ve aktif seçimlerin parlama rengi" 
+                                       FontSize="10.5" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,10"/>
+
+                            <!-- Preset Colors (Fixed 8-column single line grid) -->
+                            <Grid x:Name="PnlColorPresets" Margin="0,0,0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="*"/>
+                                </Grid.ColumnDefinitions>
+
+                                <Button Grid.Column="0" x:Name="BtnColorCyan" Tag="#22D3EE" Background="#22D3EE" ToolTip="Cyan" Style="{StaticResource ColorPresetButtonStyle}" Click="PresetColor_Click">
+                                    <TextBlock x:Name="CheckCyan" Text="✓" FontSize="10" FontWeight="Bold" Foreground="#14151B" Visibility="Collapsed"/>
+                                </Button>
+                                <Button Grid.Column="1" x:Name="BtnColorBlue" Tag="#3B82F6" Background="#3B82F6" ToolTip="Blue" Style="{StaticResource ColorPresetButtonStyle}" Click="PresetColor_Click">
+                                    <TextBlock x:Name="CheckBlue" Text="✓" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Visibility="Collapsed"/>
+                                </Button>
+                                <Button Grid.Column="2" x:Name="BtnColorPurple" Tag="#8B5CF6" Background="#8B5CF6" ToolTip="Purple" Style="{StaticResource ColorPresetButtonStyle}" Click="PresetColor_Click">
+                                    <TextBlock x:Name="CheckPurple" Text="✓" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Visibility="Collapsed"/>
+                                </Button>
+                                <Button Grid.Column="3" x:Name="BtnColorPink" Tag="#EC4899" Background="#EC4899" ToolTip="Pink" Style="{StaticResource ColorPresetButtonStyle}" Click="PresetColor_Click">
+                                    <TextBlock x:Name="CheckPink" Text="✓" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Visibility="Collapsed"/>
+                                </Button>
+                                <Button Grid.Column="4" x:Name="BtnColorRed" Tag="#EF4444" Background="#EF4444" ToolTip="Red" Style="{StaticResource ColorPresetButtonStyle}" Click="PresetColor_Click">
+                                    <TextBlock x:Name="CheckRed" Text="✓" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Visibility="Collapsed"/>
+                                </Button>
+                                <Button Grid.Column="5" x:Name="BtnColorOrange" Tag="#F97316" Background="#F97316" ToolTip="Orange" Style="{StaticResource ColorPresetButtonStyle}" Click="PresetColor_Click">
+                                    <TextBlock x:Name="CheckOrange" Text="✓" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Visibility="Collapsed"/>
+                                </Button>
+                                <Button Grid.Column="6" x:Name="BtnColorAmber" Tag="#EAB308" Background="#EAB308" ToolTip="Gold" Style="{StaticResource ColorPresetButtonStyle}" Click="PresetColor_Click">
+                                    <TextBlock x:Name="CheckAmber" Text="✓" FontSize="10" FontWeight="Bold" Foreground="#14151B" Visibility="Collapsed"/>
+                                </Button>
+                                <Button Grid.Column="7" x:Name="BtnColorGreen" Tag="#10B981" Background="#10B981" ToolTip="Green" Style="{StaticResource ColorPresetButtonStyle}" Click="PresetColor_Click">
+                                    <TextBlock x:Name="CheckGreen" Text="✓" FontSize="10" FontWeight="Bold" Foreground="#FFFFFF" Visibility="Collapsed"/>
+                                </Button>
+                            </Grid>
+                        </StackPanel>
+                    </Border>
+
+                    <!-- Option 3: Hazır Profiller (Application Setting Profiles) -->
+                    <Border Background="{DynamicResource CardBg}" 
+                            BorderBrush="{DynamicResource CardBorder}" 
+                            BorderThickness="1" CornerRadius="8" Padding="12,11">
+                        <StackPanel>
+                            <!-- Header Row: Title & Add Button -->
+                            <Grid Margin="0,0,0,10">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="*"/>
+                                    <ColumnDefinition Width="Auto"/>
+                                </Grid.ColumnDefinitions>
+
+                                <StackPanel Grid.Column="0" VerticalAlignment="Center" Margin="0,0,10,0">
+                                    <TextBlock x:Name="TxtProfilesHeader" Text="Hazır Profiller" FontSize="12" FontWeight="SemiBold" 
+                                               Foreground="{DynamicResource TextPrimary}"/>
+                                    <TextBlock x:Name="TxtProfilesDesc" Text="Oyun veya uygulamalara özel otomatik ayar profilleri" 
+                                               FontSize="10.5" Foreground="{DynamicResource TextMuted}" Margin="0,2,0,0" TextWrapping="Wrap"/>
+                                </StackPanel>
+
+                                <Button Grid.Column="1" x:Name="BtnAddProfile" VerticalAlignment="Center" 
+                                        Content="+ Profil Ekle" Style="{StaticResource ModernBtnStyle}" Click="BtnAddProfile_Click"/>
+                            </Grid>
+
+                            <!-- Profile Items Container -->
+                            <StackPanel x:Name="PnlProfilesList"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Grid>
+    </Border>
+</Window>

@@ -25,6 +25,7 @@ namespace EHelper
         private HardwareMonitorService? _monitor;
         private SystemTrayManager? _trayManager;
         private MainWindow? _mainWindow;
+        private ProfileWatcherService? _profileWatcher;
         private int _telemetryCounter;
 
         protected override void OnStartup(StartupEventArgs e)
@@ -141,7 +142,25 @@ namespace EHelper
                 // 4. Initialize Main Flyout Window (stays hidden until tray icon clicked or shown)
                 _mainWindow = new MainWindow(_bridge, isSimulated, config, _monitor);
 
-                // 5. Initialize System Tray (Notification Area Icon)
+                // 5. Initialize Profile Watcher Service for auto application detection
+                _profileWatcher = new ProfileWatcherService(config);
+                _profileWatcher.ProfileActivated += profile =>
+                {
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        _mainWindow?.ApplyProfile(profile);
+                    });
+                };
+                _profileWatcher.ProfileDeactivated += () =>
+                {
+                    Dispatcher.InvokeAsync(() =>
+                    {
+                        _mainWindow?.RestoreDefaultSettings();
+                    });
+                };
+                _profileWatcher.Start();
+
+                // 6. Initialize System Tray (Notification Area Icon)
                 _trayManager = new SystemTrayManager(_mainWindow, ShutdownApp);
 
                 // 6. Wire up Telemetry Tooltip & Periodic Memory Optimizer
@@ -161,13 +180,10 @@ namespace EHelper
                         }
                     }
 
-                    // Periodically keep memory lean both in background and while UI is open
-                    if (++_telemetryCounter % 10 == 0)
+                    // Periodically keep memory lean both in background (5-10 MB) and while UI is open (25-35 MB)
+                    if (++_telemetryCounter % 3 == 0)
                     {
-                        Dispatcher.InvokeAsync(() =>
-                        {
-                            MemoryOptimizer.TrimMemory();
-                        }, System.Windows.Threading.DispatcherPriority.Background);
+                        System.Threading.Tasks.Task.Run(() => MemoryOptimizer.TrimMemory());
                     }
                 };
 
@@ -254,6 +270,8 @@ namespace EHelper
             {
                 _waitHandleRegistration?.Unregister(null);
                 _showEvent?.Dispose();
+                _profileWatcher?.Stop();
+                _profileWatcher?.Dispose();
                 _monitor?.Stop();
                 _monitor?.Dispose();
                 _trayManager?.Dispose();
