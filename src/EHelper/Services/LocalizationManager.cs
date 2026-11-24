@@ -9,22 +9,9 @@ namespace EHelper.Services
 
         public static bool IsTurkish => CurrentLanguage.Equals("TR", StringComparison.OrdinalIgnoreCase);
 
-        public static string GetPowerModeTitle(PowerMode mode) => (IsTurkish, mode) switch
-        {
-            (true, PowerMode.Office) => "Performans Modu: Tasarruf",
-            (true, PowerMode.Gaming) => "Performans Modu: Dengeli",
-            (true, PowerMode.HighPerformance) => "Performans Modu: Performans",
-            (false, PowerMode.Office) => "Performance Mode: Eco",
-            (false, PowerMode.Gaming) => "Performance Mode: Balanced",
-            (false, PowerMode.HighPerformance) => "Performance Mode: Performance",
-            (true, _) => "Performans Modu",
-            (false, _) => "Performance Mode"
-        };
-
         public static string PowerOffice => IsTurkish ? "Tasarruf" : "Eco";
         public static string PowerGaming => IsTurkish ? "Dengeli" : "Balanced";
         public static string PowerTurbo => IsTurkish ? "Performans" : "Performance";
-        public static string PowerHighPerformance => PowerTurbo;
 
         public static string PowerOptionsHeader => IsTurkish ? "GÜÇ SEÇENEKLERİ" : "POWER OPTIONS";
         public static string PowerOfficeSub => IsTurkish ? "Sessiz" : "Silent";
@@ -39,13 +26,7 @@ namespace EHelper.Services
         public static string RamBellek => IsTurkish ? "RAM (Bellek)" : "RAM (Memory)";
         public static string SsdDepolama => IsTurkish ? "SSD (Depolama)" : "SSD (Storage)";
 
-        public static string GpuHeader => IsTurkish ? "GPU Modu: Ayrık / Hibrit" : "GPU Mode: Discrete / Hybrid";
-        public static string RamLabel => IsTurkish ? "RAM Bellek" : "RAM Memory";
-        public static string SsdLabel => IsTurkish ? "SSD Disk (C:)" : "SSD Drive (C:)";
-
-        public static string KeyboardHeader => IsTurkish ? "Laptop Klavyesi" : "Laptop Keyboard";
         public static string RgbKeyboardHeader => IsTurkish ? "RGB Klavye Aydınlatma" : "RGB Keyboard Lighting";
-        public static string BrightnessLabel => IsTurkish ? "Parlaklık: " : "Brightness: ";
         public static string BrightnessSliderTitle => IsTurkish ? "Parlaklık" : "Brightness";
 
         public static string LedStatic => IsTurkish ? "Sabit" : "Static";
@@ -55,35 +36,22 @@ namespace EHelper.Services
         public static string LedRainbow => IsTurkish ? "Gökkuşağı" : "Rainbow";
         public static string LedTripleZone => IsTurkish ? "3-Bölge" : "3-Zone";
         public static string ColorLabel => IsTurkish ? "Renk" : "Color";
-        public static string ColorAuto => IsTurkish ? "Renk: Otomatik" : "Color: Auto";
-        public static string ColorSelectionTitle => IsTurkish ? "Renk" : "Color";
         public static string ZoneColorsTitle => IsTurkish ? "Bölge Renkleri" : "Zone Colors";
 
         public static string CycleSpeedTitle => IsTurkish ? "Hız" : "Speed";
-        public static string AnimationSpeedTitle => IsTurkish ? "Hız" : "Speed";
         public static string SpeedSlow => IsTurkish ? "Yavaş" : "Slow";
         public static string SpeedMedium => IsTurkish ? "Orta" : "Medium";
         public static string SpeedFast => IsTurkish ? "Hızlı" : "Fast";
 
-        public static string ZoneLeftLabel => IsTurkish ? "Sol Bölge" : "Left Zone";
-        public static string ZoneCenterLabel => IsTurkish ? "Orta Bölge" : "Center Zone";
-        public static string ZoneRightLabel => IsTurkish ? "Sağ Bölge" : "Right Zone";
         public static string ZoneLeftShort => IsTurkish ? "Sol" : "Left";
         public static string ZoneCenterShort => IsTurkish ? "Orta" : "Center";
         public static string ZoneRightShort => IsTurkish ? "Sağ" : "Right";
-        public static string KeyboardDiagramTitle => IsTurkish ? "Bölge Seç ve Rengini Belirle:" : "Select Zone & Set Color:";
 
-        public static string CustomColorButton => IsTurkish ? "🎨 Özel Renk Seç" : "🎨 Custom Color";
-        public static string CustomColorTitle => IsTurkish ? "Özel Renk" : "Custom Color";
-        public static string PresetsTitle => IsTurkish ? "Hazır Renkler" : "Color Presets";
-
-        public static string AutoStart => IsTurkish ? "Başlangıçta Çalıştır" : "Start with Windows";
         public static string SettingsTitle => IsTurkish ? "Ayarlar" : "Settings";
         public static string StartWithWindowsTitle => IsTurkish ? "Başlangıçta Çalıştır" : "Start with Windows";
         public static string StartWithWindowsDesc => IsTurkish ? "Windows açıldığında E-Helper otomatik başlatılsın" : "Launch E-Helper automatically on Windows startup";
         public static string AppColorThemeTitle => IsTurkish ? "Uygulama Renk Teması" : "Application Color Theme";
         public static string AppColorThemeDesc => IsTurkish ? "Çerçeve, vurgu ve aktif seçimlerin parlama rengi" : "Border, accent, and active selection glow color";
-        public static string SelectCustomColor => IsTurkish ? "🎨 Renk Seç..." : "🎨 Pick Color...";
 
         public static string ProfilesTitle => IsTurkish ? "Hazır Profiller" : "Custom Profiles";
         public static string ProfilesDesc => IsTurkish ? "Oyun veya uygulamalara özel otomatik güç ve aydınlatma profilleri" : "Automatic power and lighting profiles for games or apps";
@@ -105,29 +73,20 @@ namespace EHelper.Services
         public static string EditProfileTooltip => IsTurkish ? "Profili Düzenle" : "Edit Profile";
         public static string ProfileActivated => IsTurkish ? "- Profil: " : "- Profile: ";
 
-        public static string CheckUpdates => IsTurkish ? "📥 Güncellemeler" : "📥 Updates";
-
-        public static string ThemeLight => IsTurkish ? "Açık" : "Light";
-        public static string ThemeDark => IsTurkish ? "Koyu" : "Dark";
         public static string Refresh => IsTurkish ? "Yenile" : "Refresh";
         public static string Exit => IsTurkish ? "Çıkış" : "Exit";
-        public static string LangButton => IsTurkish ? "EN" : "TR";
 
         public static string ColorDialogTitle => IsTurkish ? "Renk Seçimi" : "Color";
         public static string ColorOkButton => IsTurkish ? "Tamam" : "OK";
         public static string ColorCancelButton => IsTurkish ? "İptal" : "Cancel";
 
-        public static string VersionPrefix => IsTurkish ? "Sürüm: " : "Version: ";
-        public static string DownloadPrefix => IsTurkish ? "İndir: " : "Download: ";
         public static string UpdatingStatus => IsTurkish ? "Güncelleniyor..." : "Updating...";
         public static string DownloadingStatus => IsTurkish ? "İndiriliyor" : "Downloading";
         public static string ExtractingStatus => IsTurkish ? "Paket açılıyor ve güncelleniyor..." : "Extracting & updating...";
         public static string UpdateBannerTitle => IsTurkish ? "Güncellemesi Mevcut" : "Update Available";
         public static string UpdateNow => IsTurkish ? "Güncelle" : "Update";
         public static string UpToDate => IsTurkish ? "- Güncel" : "- Up to date";
-        public static string CheckingUpdates => IsTurkish ? "- Kontrol ediliyor..." : "- Checking...";
         public static string CloseTooltip => IsTurkish ? "Kapat / Tepsiye Gizle" : "Close / Hide to Tray";
-        public static string MinimizeTooltip => IsTurkish ? "Simge Durumuna Küçült" : "Minimize";
         public static string ThemeTooltip => IsTurkish ? "Tema (Koyu / Açık)" : "Theme (Dark / Light)";
         public static string LanguageTooltip => IsTurkish ? "Dil (TR / EN)" : "Language (TR / EN)";
 
@@ -139,5 +98,63 @@ namespace EHelper.Services
         public static string Sleep60s => IsTurkish ? "60 saniye" : "60 seconds";
         public static string Sleep5m => IsTurkish ? "5 dakika" : "5 minutes";
         public static string SleepOffLabel => IsTurkish ? "Kapalı" : "Off";
+
+        public static string TrayOpen => IsTurkish ? "E-Helper'ı Aç" : "Open E-Helper";
+        public static string PowerLabel => IsTurkish ? "Güç" : "Power";
+        public static string CapturedSettingsLabel => IsTurkish ? "Seçilen Donanım Ayarları:" : "Captured Hardware Settings:";
+        public static string ProfileNameRequired => IsTurkish ? "Lütfen profil adı girin." : "Please enter a profile name.";
+        public static string ProfileAppRequired => IsTurkish ? "Lütfen bir uygulama (.exe) seçin." : "Please select an application (.exe).";
+
+        public static string GetPowerModeName(PowerMode mode) => mode switch
+        {
+            PowerMode.Office => PowerOffice,
+            PowerMode.HighPerformance => PowerTurbo,
+            _ => PowerGaming
+        };
+
+        public static string GetLedModeName(LedMode mode) => mode switch
+        {
+            LedMode.Rainbow => LedRainbow,
+            LedMode.Cycle => LedCycle,
+            LedMode.Breathing => LedBreathing,
+            LedMode.ColorfulCycle => LedDynamic,
+            LedMode.TripleZone => LedTripleZone,
+            _ => LedStatic
+        };
+
+        public static string GetSpeedName(int speed) => speed switch
+        {
+            1 => SpeedMedium,
+            2 => SpeedFast,
+            _ => SpeedSlow
+        };
+
+        /// <summary>"(%100)" or "(%100, Hızlı)" for animated modes.</summary>
+        public static string FormatLedDetails(ILightingProfile p)
+        {
+            string bright = p.LedBrightness switch { 0 => "%0", 1 => "%50", _ => "%100" };
+            return p.LedMode is LedMode.Rainbow or LedMode.Cycle
+                ? $"({bright}, {GetSpeedName(p.CycleSpeed)})"
+                : $"({bright})";
+        }
+
+        /// <summary>Long label used in the sleep timer menu and tooltip.</summary>
+        public static string GetSleepOptionLabel(int seconds) => seconds switch
+        {
+            15 => Sleep15s,
+            30 => Sleep30s,
+            45 => Sleep45s,
+            60 => Sleep60s,
+            300 => Sleep5m,
+            _ => SleepDisabled
+        };
+
+        /// <summary>Compact label shown next to the sleep timer icon.</summary>
+        public static string GetSleepShortLabel(int seconds) => seconds switch
+        {
+            15 or 30 or 45 or 60 => $"{seconds}s",
+            300 => IsTurkish ? "5dk" : "5m",
+            _ => SleepOffLabel
+        };
     }
 }

@@ -1,9 +1,9 @@
-using System.Text.Json.Serialization;
+using System.Collections.Generic;
 using EHelper.Core;
 
 namespace EHelper.Config
 {
-    public class AppSettings
+    public class AppSettings : ILightingProfile
     {
         public PowerMode PowerMode { get; set; } = PowerMode.Gaming;
         public LedMode LedMode { get; set; } = LedMode.Static;
@@ -31,9 +31,6 @@ namespace EHelper.Config
         public bool IsDarkTheme { get; set; } = true;
         public string Language { get; set; } = "TR";
         public string ThemeAccentColor { get; set; } = "#22D3EE";
-        public System.Collections.Generic.List<AppProfile> Profiles { get; set; } = new();
-
-        [JsonIgnore]
-        public string HexColor => $"#{Red:X2}{Green:X2}{Blue:X2}";
+        public List<AppProfile> Profiles { get; set; } = new();
     }
 }

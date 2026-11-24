@@ -1,5 +1,4 @@
 using System;
-using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -13,10 +12,6 @@ namespace EHelper.UI
 {
     public partial class ColorPickerWindow : Window
     {
-        public byte OriginalRed { get; }
-        public byte OriginalGreen { get; }
-        public byte OriginalBlue { get; }
-
         public byte SelectedRed { get; private set; }
         public byte SelectedGreen { get; private set; }
         public byte SelectedBlue { get; private set; }
@@ -39,10 +34,6 @@ namespace EHelper.UI
         {
             _isUpdating = true;
             InitializeComponent();
-
-            OriginalRed = initialR;
-            OriginalGreen = initialG;
-            OriginalBlue = initialB;
 
             SelectedRed = initialR;
             SelectedGreen = initialG;
@@ -195,13 +186,7 @@ namespace EHelper.UI
         {
             if (_isUpdating || TxtHexInput == null) return;
 
-            string hex = TxtHexInput.Text.Trim();
-            if (hex.StartsWith('#')) hex = hex[1..];
-
-            if (hex.Length == 6 &&
-                byte.TryParse(hex[..2], NumberStyles.HexNumber, null, out byte r) &&
-                byte.TryParse(hex[2..4], NumberStyles.HexNumber, null, out byte g) &&
-                byte.TryParse(hex[4..6], NumberStyles.HexNumber, null, out byte b))
+            if (ThemeHelper.TryParseHex(TxtHexInput.Text, out byte r, out byte g, out byte b))
             {
                 RgbToHsv(r, g, b, out _hue, out _saturation, out _value);
                 UpdateFromHsv(updateInputs: false, updateReticle: true, updateHueThumb: true);
@@ -210,17 +195,10 @@ namespace EHelper.UI
 
         private void Swatch_Click(object sender, RoutedEventArgs e)
         {
-            if (sender is Button btn && btn.Tag is string hex)
+            if (sender is Button btn && btn.Tag is string hex && ThemeHelper.TryParseHex(hex, out byte r, out byte g, out byte b))
             {
-                string cleanHex = hex.TrimStart('#');
-                if (cleanHex.Length == 6 &&
-                    byte.TryParse(cleanHex[..2], NumberStyles.HexNumber, null, out byte r) &&
-                    byte.TryParse(cleanHex[2..4], NumberStyles.HexNumber, null, out byte g) &&
-                    byte.TryParse(cleanHex[4..6], NumberStyles.HexNumber, null, out byte b))
-                {
-                    RgbToHsv(r, g, b, out _hue, out _saturation, out _value);
-                    UpdateFromHsv(updateInputs: true, updateReticle: true, updateHueThumb: true);
-                }
+                RgbToHsv(r, g, b, out _hue, out _saturation, out _value);
+                UpdateFromHsv(updateInputs: true, updateReticle: true, updateHueThumb: true);
             }
         }
 
@@ -298,60 +276,10 @@ namespace EHelper.UI
             }
         }
 
-        private static (byte R, byte G, byte B) HsvToRgb(double h, double s, double v)
-        {
-            double c = v * s;
-            double x = c * (1.0 - Math.Abs((h / 60.0) % 2.0 - 1.0));
-            double m = v - c;
-
-            double r = 0, g = 0, b = 0;
-            if (h < 60) { r = c; g = x; b = 0; }
-            else if (h < 120) { r = x; g = c; b = 0; }
-            else if (h < 180) { r = 0; g = c; b = x; }
-            else if (h < 240) { r = 0; g = x; b = c; }
-            else if (h < 300) { r = x; g = 0; b = c; }
-            else { r = c; g = 0; b = x; }
-
-            return ((byte)Math.Round((r + m) * 255.0),
-                    (byte)Math.Round((g + m) * 255.0),
-                    (byte)Math.Round((b + m) * 255.0));
-        }
+        private static (byte R, byte G, byte B) HsvToRgb(double h, double s, double v) => ThemeHelper.HsvToRgb(h, s, v);
 
         private static void RgbToHsv(byte r, byte g, byte b, out double h, out double s, out double v)
-        {
-            double rd = r / 255.0;
-            double gd = g / 255.0;
-            double bd = b / 255.0;
-
-            double max = Math.Max(rd, Math.Max(gd, bd));
-            double min = Math.Min(rd, Math.Min(gd, bd));
-            double delta = max - min;
-
-            v = max;
-            s = max == 0.0 ? 0.0 : delta / max;
-
-            if (delta == 0.0)
-            {
-                h = 0.0;
-            }
-            else if (max == rd)
-            {
-                h = 60.0 * (((gd - bd) / delta) % 6.0);
-            }
-            else if (max == gd)
-            {
-                h = 60.0 * (((bd - rd) / delta) + 2.0);
-            }
-            else
-            {
-                h = 60.0 * (((rd - gd) / delta) + 4.0);
-            }
-
-            if (h < 0.0)
-            {
-                h += 360.0;
-            }
-        }
+            => ThemeHelper.RgbToHsv(r, g, b, out h, out s, out v);
 
         #endregion
     }

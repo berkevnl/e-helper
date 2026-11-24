@@ -30,18 +30,33 @@ namespace EHelper.Services
             set
             {
                 _timeoutSeconds = value;
-                if (_timeoutSeconds <= 0 && _isSleeping)
+                if (_timeoutSeconds <= 0)
                 {
-                    _isSleeping = false;
-                    IdleStateChanged?.Invoke(false);
+                    ResetWake();
                 }
+                UpdateTimer();
             }
         }
 
         public KeyboardIdleWatcherService(int initialTimeoutSeconds)
         {
             _timeoutSeconds = initialTimeoutSeconds;
-            _timer = new System.Threading.Timer(CheckIdleState, null, 1000, 500);
+            _timer = new System.Threading.Timer(CheckIdleState, null, Timeout.Infinite, Timeout.Infinite);
+            UpdateTimer(initialDelayMs: 1000);
+        }
+
+        /// <summary>Polls only while a timeout is configured (zero CPU wakeups when the feature is off).</summary>
+        private void UpdateTimer(int initialDelayMs = 500)
+        {
+            if (_isDisposed) return;
+            try
+            {
+                if (_timeoutSeconds > 0)
+                    _timer.Change(initialDelayMs, 500);
+                else
+                    _timer.Change(Timeout.Infinite, Timeout.Infinite);
+            }
+            catch (ObjectDisposedException) { }
         }
 
         private void CheckIdleState(object? state)
@@ -58,8 +73,7 @@ namespace EHelper.Services
             }
             else if (_isSleeping && idleMs < thresholdMs)
             {
-                _isSleeping = false;
-                IdleStateChanged?.Invoke(false);
+                ResetWake();
             }
         }
 

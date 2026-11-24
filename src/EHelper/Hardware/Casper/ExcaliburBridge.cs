@@ -110,7 +110,7 @@ namespace EHelper.Hardware.Casper
                     try
                     {
                         var opts = new EnumerationOptions { ReturnImmediately = true, Timeout = TimeSpan.FromMilliseconds(500) };
-                        using var searcher = new ManagementObjectSearcher(WmiNamespace, "SELECT BufferBytes FROM RW_GMWMI", opts);
+                        using var searcher = new ManagementObjectSearcher(WmiNamespace, $"SELECT BufferBytes FROM {WmiClassName}", opts);
                         foreach (ManagementObject obj in searcher.Get())
                         {
                             if (obj["BufferBytes"] is byte[] fresh && fresh.Length >= size)
@@ -153,12 +153,27 @@ namespace EHelper.Hardware.Casper
             }
         }
 
+        /// <summary>Sends a write command (LED / fan / power) to the EC.</summary>
+        private bool WriteSmi(ushort subFunction, uint a2 = 0, uint a3 = 0, uint a4 = 0)
+        {
+            var smi = new SMI_STRUCT_S
+            {
+                a0 = ExcaliburSmiHelper.CMD_WRITE,
+                a1 = subFunction,
+                a2 = a2,
+                a3 = a3,
+                a4 = a4
+            };
+            return PerformSmi(ref smi);
+        }
+
         public HardwareTelemetry GetTelemetry()
         {
-            var smi = new SMI_STRUCT_S();
-            smi.Clear();
-            smi.a0 = ExcaliburSmiHelper.CMD_READ;
-            smi.a1 = ExcaliburSmiHelper.SUB_CPU_GPU_TELEMETRY;
+            var smi = new SMI_STRUCT_S
+            {
+                a0 = ExcaliburSmiHelper.CMD_READ,
+                a1 = ExcaliburSmiHelper.SUB_CPU_GPU_TELEMETRY
+            };
 
             bool smiSuccess = PerformSmi(ref smi);
 
@@ -200,30 +215,20 @@ namespace EHelper.Hardware.Casper
 
             if (gpuRpm == 0 && nvGpu.FanPercent > 0)
             {
-                gpuRpm = (ushort)(nvGpu.FanPercent * 45); 
+                gpuRpm = (ushort)(nvGpu.FanPercent * 45); // approximate RPM from NVML fan duty %
             }
 
-            if (smiSuccess || cpuTemp > 0 || gpuTemp > 0 || cpuRpm > 0 || gpuRpm > 0)
-            {
-                return new HardwareTelemetry(
-                    CpuTemperature: cpuTemp,
-                    GpuTemperature: gpuTemp,
-                    CpuFanRpm: cpuRpm,
-                    GpuFanRpm: gpuRpm,
-                    SysTemperature: 0,
-                    SysFanRpm: 0,
-                    IsAvailable: true
-                );
-            }
-
-            return new HardwareTelemetry(0, 0, 0, 0, 0, 0, false);
+            bool isAvailable = smiSuccess || cpuTemp > 0 || gpuTemp > 0 || cpuRpm > 0 || gpuRpm > 0;
+            return isAvailable
+                ? new HardwareTelemetry(cpuTemp, gpuTemp, cpuRpm, gpuRpm)
+                : new HardwareTelemetry(0, 0, 0, 0, IsAvailable: false);
         }
 
         private static byte GetThermalZoneTemperature()
         {
             try
             {
-                using var searcher = new ManagementObjectSearcher(@"root\wmi", "SELECT CurrentTemperature FROM MSAcpi_ThermalZoneTemperature");
+                using var searcher = new ManagementObjectSearcher(WmiNamespace, "SELECT CurrentTemperature FROM MSAcpi_ThermalZoneTemperature");
                 foreach (ManagementObject obj in searcher.Get())
                 {
                     if (obj["CurrentTemperature"] is uint k && k > 2732)
@@ -237,37 +242,12 @@ namespace EHelper.Hardware.Casper
             return 0;
         }
 
-        public bool SetPowerMode(PowerMode mode)
-        {
-            var smi = new SMI_STRUCT_S();
-            smi.Clear();
-            smi.a0 = ExcaliburSmiHelper.CMD_WRITE;
-            smi.a1 = ExcaliburSmiHelper.SUB_POWER_MODE;
-            smi.a2 = (uint)mode;
-            return PerformSmi(ref smi);
-        }
+        public bool SetPowerMode(PowerMode mode) => WriteSmi(ExcaliburSmiHelper.SUB_POWER_MODE, (uint)mode);
 
-        public bool SetManualFanControl(bool enabled)
-        {
-            var smi = new SMI_STRUCT_S();
-            smi.Clear();
-            smi.a0 = ExcaliburSmiHelper.CMD_WRITE;
-            smi.a1 = ExcaliburSmiHelper.SUB_FAN_OVERRIDE;
-            smi.a2 = enabled ? 1u : 0u;
-            return PerformSmi(ref smi);
-        }
+        public bool SetManualFanControl(bool enabled) => WriteSmi(ExcaliburSmiHelper.SUB_FAN_OVERRIDE, enabled ? 1u : 0u);
 
         public bool SetFanSpeed(byte cpuPercent, byte gpuPercent, byte sysPercent = 255)
-        {
-            var smi = new SMI_STRUCT_S();
-            smi.Clear();
-            smi.a0 = ExcaliburSmiHelper.CMD_WRITE;
-            smi.a1 = ExcaliburSmiHelper.SUB_FAN_SPEED;
-            smi.a2 = cpuPercent;
-            smi.a3 = gpuPercent;
-            smi.a4 = sysPercent;
-            return PerformSmi(ref smi);
-        }
+            => WriteSmi(ExcaliburSmiHelper.SUB_FAN_SPEED, cpuPercent, gpuPercent, sysPercent);
 
         public void ResetFansToAuto()
         {
@@ -276,15 +256,20 @@ namespace EHelper.Hardware.Casper
         }
 
         public bool SetLed(LedZone zone, LedMode mode, byte brightness, byte r, byte g, byte b)
+            => WriteSmi(ExcaliburSmiHelper.SUB_LED, (uint)zone, ExcaliburSmiHelper.PackLedData(mode, brightness, r, g, b));
+
+        /// <summary>
+        /// Writes the same setting to Zone 0 (Master), Zone 6 (ALLKBLED) and individual zones (3, 4, 5)
+        /// so the EC reliably wakes up. Result reflects the master / keyboard / first zone writes.
+        /// </summary>
+        private bool SetAllKeyboardZones(LedMode mode, byte brightness, byte r, byte g, byte b)
         {
-            uint packed = ExcaliburSmiHelper.PackLedData(mode, brightness, r, g, b);
-            var smi = new SMI_STRUCT_S();
-            smi.Clear();
-            smi.a0 = ExcaliburSmiHelper.CMD_WRITE;
-            smi.a1 = ExcaliburSmiHelper.SUB_LED;
-            smi.a2 = (uint)zone;
-            smi.a3 = packed;
-            return PerformSmi(ref smi);
+            bool ok = SetLed(LedZone.All, mode, brightness, r, g, b);
+            ok |= SetLed(LedZone.AllKeyboard, mode, brightness, r, g, b);
+            ok |= SetLed(LedZone.KeyboardLeft, mode, brightness, r, g, b);
+            SetLed(LedZone.KeyboardCenter, mode, brightness, r, g, b);
+            SetLed(LedZone.KeyboardRight, mode, brightness, r, g, b);
+            return ok;
         }
 
         public bool SetAllKeyboardLed(LedMode mode, byte brightness, byte r, byte g, byte b)
@@ -296,21 +281,14 @@ namespace EHelper.Hardware.Casper
             }
 
             // Only prime the EC PWM when first transitioning into Cycle, Dynamic or Rainbow, NEVER for Breathing or when already in the mode
-            if (_activeMode != mode && (mode == LedMode.Cycle || mode == LedMode.ColorfulCycle || mode == LedMode.Rainbow))
+            if (_activeMode != mode && mode is LedMode.Cycle or LedMode.ColorfulCycle or LedMode.Rainbow)
             {
                 SetLed(LedZone.All, LedMode.Static, brightness, r, g, b);
                 SetLed(LedZone.AllKeyboard, LedMode.Static, brightness, r, g, b);
             }
             _activeMode = mode;
 
-            // Set Zone 0 (Master), Zone 6 (ALLKBLED), and individual zones (3, 4, 5) to ensure EC wakes up
-            bool res0 = SetLed(LedZone.All, mode, brightness, r, g, b);
-            bool res6 = SetLed(LedZone.AllKeyboard, mode, brightness, r, g, b);
-            bool res3 = SetLed(LedZone.KeyboardLeft, mode, brightness, r, g, b);
-            bool res4 = SetLed(LedZone.KeyboardCenter, mode, brightness, r, g, b);
-            bool res5 = SetLed(LedZone.KeyboardRight, mode, brightness, r, g, b);
-
-            return res0 || res6 || res3;
+            return SetAllKeyboardZones(mode, brightness, r, g, b);
         }
 
         public bool SetKeyboardTripleZone(byte brightness, (byte r, byte g, byte b) left, (byte r, byte g, byte b) center, (byte r, byte g, byte b) right)
@@ -331,15 +309,7 @@ namespace EHelper.Hardware.Casper
             return resL || resC || resR;
         }
 
-        public bool TurnOffAllLights()
-        {
-            bool res0 = SetLed(LedZone.All, LedMode.Off, 0, 0, 0, 0);
-            bool res6 = SetLed(LedZone.AllKeyboard, LedMode.Off, 0, 0, 0, 0);
-            bool res3 = SetLed(LedZone.KeyboardLeft, LedMode.Off, 0, 0, 0, 0);
-            bool res4 = SetLed(LedZone.KeyboardCenter, LedMode.Off, 0, 0, 0, 0);
-            bool res5 = SetLed(LedZone.KeyboardRight, LedMode.Off, 0, 0, 0, 0);
-            return res0 || res6 || res3;
-        }
+        public bool TurnOffAllLights() => SetAllKeyboardZones(LedMode.Off, 0, 0, 0, 0);
 
         public void Dispose()
         {

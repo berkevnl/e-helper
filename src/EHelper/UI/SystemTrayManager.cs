@@ -1,7 +1,6 @@
 using System;
 using System.Drawing;
 using System.Windows.Forms;
-using EHelper.Core;
 using EHelper.Services;
 
 namespace EHelper.UI
@@ -37,21 +36,12 @@ namespace EHelper.UI
             {
                 menu.Items.Clear();
 
-                string openText = LocalizationManager.IsTurkish ? "E-Helper'ı Aç" : "Open E-Helper";
-                string exitText = LocalizationManager.IsTurkish ? "Çıkış" : "Exit";
-
-                var openItem = new ToolStripMenuItem(openText, null, (o, ev) =>
-                {
-                    _mainWindow.Dispatcher.Invoke(() => _mainWindow.ToggleFlyout());
-                })
+                var openItem = new ToolStripMenuItem(LocalizationManager.TrayOpen, null, (o, ev) => ToggleFlyout())
                 {
                     Font = new Font(menu.Font, System.Drawing.FontStyle.Bold)
                 };
 
-                var exitItem = new ToolStripMenuItem(exitText, null, (o, ev) =>
-                {
-                    _onExit();
-                });
+                var exitItem = new ToolStripMenuItem(LocalizationManager.Exit, null, (o, ev) => _onExit());
 
                 menu.Items.Add(openItem);
                 menu.Items.Add(new ToolStripSeparator());
@@ -63,20 +53,15 @@ namespace EHelper.UI
 
         private void SetupEvents()
         {
+            // Left click toggles flyout panel
             _notifyIcon.MouseClick += (s, e) =>
             {
-                // Left click toggles flyout panel
-                if (e.Button == MouseButtons.Left)
-                {
-                    _mainWindow.Dispatcher.Invoke(() => _mainWindow.ToggleFlyout());
-                }
+                if (e.Button == MouseButtons.Left) ToggleFlyout();
             };
-
-            _notifyIcon.DoubleClick += (s, e) =>
-            {
-                _mainWindow.Dispatcher.Invoke(() => _mainWindow.ToggleFlyout());
-            };
+            _notifyIcon.DoubleClick += (s, e) => ToggleFlyout();
         }
+
+        private void ToggleFlyout() => _mainWindow.Dispatcher.Invoke(_mainWindow.ToggleFlyout);
 
         public void UpdateTooltip(string text)
         {

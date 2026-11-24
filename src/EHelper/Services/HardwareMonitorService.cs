@@ -14,8 +14,6 @@ namespace EHelper.Services
 
         public event Action<HardwareTelemetry>? TelemetryUpdated;
 
-        public HardwareTelemetry LatestTelemetry { get; private set; } = new(0, 0, 0, 0, 0, 0, false);
-
         public HardwareMonitorService(IHardwareProvider provider, int intervalSeconds = 3)
         {
             _provider = provider;
@@ -40,9 +38,7 @@ namespace EHelper.Services
 
             try
             {
-                var telemetry = _provider.GetTelemetry();
-                LatestTelemetry = telemetry;
-                TelemetryUpdated?.Invoke(telemetry);
+                TelemetryUpdated?.Invoke(_provider.GetTelemetry());
             }
             catch
             {

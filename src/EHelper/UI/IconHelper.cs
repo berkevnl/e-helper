@@ -14,64 +14,92 @@ namespace EHelper.UI
         [DllImport("user32.dll", CharSet = CharSet.Auto)]
         private static extern bool DestroyIcon(IntPtr handle);
 
-        public static Icon CreateAppIcon()
+        private static readonly Assembly Asm = Assembly.GetExecutingAssembly();
+        private static string LocalAsset(string fileName) => Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "Assets", fileName);
+
+        public static Icon CreateTrayIcon()
         {
             try
             {
-                // 1. Try local Assets directory beside the executable
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                string localIco = Path.Combine(baseDir, "Assets", "app.ico");
+                var targetSize = SystemInformation.SmallIconSize;
+                int sz = Math.Max(16, targetSize.Width);
+
+                // 1. Local Assets/tray.ico beside executable
+                string localIco = LocalAsset("tray.ico");
+                if (File.Exists(localIco))
+                {
+                    return new Icon(localIco, targetSize);
+                }
+
+                // 2. Embedded tray.ico
+                using (var stream = Asm.GetManifestResourceStream("EHelper.Assets.tray.ico"))
+                {
+                    if (stream != null) return new Icon(stream, targetSize);
+                }
+
+                // 3. WPF pack URI
+                var packIcon = TryLoadPackIcon("tray.ico", targetSize);
+                if (packIcon != null) return packIcon;
+
+                // 4. Embedded tray.png
+                using (var stream = Asm.GetManifestResourceStream("EHelper.Assets.tray.png"))
+                {
+                    if (stream != null)
+                    {
+                        using var bmp = new Bitmap(stream);
+                        return ResizeToIcon(bmp, sz);
+                    }
+                }
+
+                // 5. Local Assets/tray.png
+                string localPng = LocalAsset("tray.png");
+                if (File.Exists(localPng))
+                {
+                    using var bmp = new Bitmap(localPng);
+                    return ResizeToIcon(bmp, sz);
+                }
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[IconHelper] CreateTrayIcon failed: {ex.Message}");
+            }
+
+            return CreateAppIcon();
+        }
+
+        private static Icon CreateAppIcon()
+        {
+            try
+            {
+                // 1. Local Assets/app.ico beside executable
+                string localIco = LocalAsset("app.ico");
                 if (File.Exists(localIco))
                 {
                     return new Icon(localIco);
                 }
 
-                // 2. Try embedded resource stream EHelper.Assets.app.ico
-                var asm = Assembly.GetExecutingAssembly();
-                using (var stream = asm.GetManifestResourceStream("EHelper.Assets.app.ico"))
+                // 2. Embedded app.ico
+                using (var stream = Asm.GetManifestResourceStream("EHelper.Assets.app.ico"))
                 {
-                    if (stream != null)
-                    {
-                        return new Icon(stream);
-                    }
+                    if (stream != null) return new Icon(stream);
                 }
 
-                // 3. Try WPF pack URI
-                try
-                {
-                    var uri = new Uri("pack://application:,,,/E-Helper;component/Assets/app.ico", UriKind.Absolute);
-                    var sri = System.Windows.Application.GetResourceStream(uri);
-                    if (sri?.Stream != null)
-                    {
-                        using (sri.Stream)
-                        {
-                            return new Icon(sri.Stream);
-                        }
-                    }
-                }
-                catch { }
+                // 3. WPF pack URI
+                var packIcon = TryLoadPackIcon("app.ico", null);
+                if (packIcon != null) return packIcon;
 
-                // 4. Try tray.ico embedded stream
-                using (var stream = asm.GetManifestResourceStream("EHelper.Assets.tray.ico"))
+                // 4. Embedded tray.ico
+                using (var stream = Asm.GetManifestResourceStream("EHelper.Assets.tray.ico"))
                 {
-                    if (stream != null)
-                    {
-                        return new Icon(stream);
-                    }
+                    if (stream != null) return new Icon(stream);
                 }
 
-                // 5. Try logo.png / tray.png beside executable
-                string localPng = Path.Combine(baseDir, "Assets", "tray.png");
+                // 5. Local Assets/tray.png
+                string localPng = LocalAsset("tray.png");
                 if (File.Exists(localPng))
                 {
                     using var bmp = new Bitmap(localPng);
-                    IntPtr h = bmp.GetHicon();
-                    try
-                    {
-                        using var tmp = Icon.FromHandle(h);
-                        return (Icon)tmp.Clone();
-                    }
-                    finally { DestroyIcon(h); }
+                    return BitmapToIcon(bmp);
                 }
             }
             catch (Exception ex)
@@ -82,103 +110,51 @@ namespace EHelper.UI
             return GenerateFallbackIcon();
         }
 
-        public static Icon CreateTrayIcon()
+        private static Icon? TryLoadPackIcon(string fileName, Size? size)
         {
             try
             {
-                var targetSize = SystemInformation.SmallIconSize;
-                string baseDir = AppDomain.CurrentDomain.BaseDirectory;
-                
-                // 1. Try local Assets/tray.ico beside executable
-                string localIco = Path.Combine(baseDir, "Assets", "tray.ico");
-                if (File.Exists(localIco))
+                var uri = new Uri($"pack://application:,,,/E-Helper;component/Assets/{fileName}", UriKind.Absolute);
+                var sri = System.Windows.Application.GetResourceStream(uri);
+                if (sri?.Stream != null)
                 {
-                    return new Icon(localIco, targetSize);
-                }
-
-                // 2. Try embedded resource stream EHelper.Assets.tray.ico
-                var asm = Assembly.GetExecutingAssembly();
-                using (var stream = asm.GetManifestResourceStream("EHelper.Assets.tray.ico"))
-                {
-                    if (stream != null)
+                    using (sri.Stream)
                     {
-                        return new Icon(stream, targetSize);
+                        return size.HasValue ? new Icon(sri.Stream, size.Value) : new Icon(sri.Stream);
                     }
-                }
-
-                // 3. Try WPF Pack URI
-                try
-                {
-                    var uri = new Uri("pack://application:,,,/E-Helper;component/Assets/tray.ico", UriKind.Absolute);
-                    var sri = System.Windows.Application.GetResourceStream(uri);
-                    if (sri?.Stream != null)
-                    {
-                        using (sri.Stream)
-                        {
-                            return new Icon(sri.Stream, targetSize);
-                        }
-                    }
-                }
-                catch { }
-
-                // 4. Try embedded EHelper.Assets.tray.png
-                using (var stream = asm.GetManifestResourceStream("EHelper.Assets.tray.png"))
-                {
-                    if (stream != null)
-                    {
-                        using var originalBmp = new Bitmap(stream);
-                        int sz = Math.Max(16, targetSize.Width);
-                        using var resized = new Bitmap(sz, sz);
-                        using (var g = Graphics.FromImage(resized))
-                        {
-                            g.Clear(Color.Transparent);
-                            g.SmoothingMode = SmoothingMode.HighQuality;
-                            g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                            g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                            g.DrawImage(originalBmp, 0, 0, sz, sz);
-                        }
-
-                        IntPtr h = resized.GetHicon();
-                        try
-                        {
-                            using var tmp = Icon.FromHandle(h);
-                            return (Icon)tmp.Clone();
-                        }
-                        finally { DestroyIcon(h); }
-                    }
-                }
-
-                // 5. Try local Assets/tray.png
-                string localPng = Path.Combine(baseDir, "Assets", "tray.png");
-                if (File.Exists(localPng))
-                {
-                    using var originalBmp = new Bitmap(localPng);
-                    int sz = Math.Max(16, targetSize.Width);
-                    using var resized = new Bitmap(sz, sz);
-                    using (var g = Graphics.FromImage(resized))
-                    {
-                        g.Clear(Color.Transparent);
-                        g.SmoothingMode = SmoothingMode.HighQuality;
-                        g.InterpolationMode = InterpolationMode.HighQualityBicubic;
-                        g.PixelOffsetMode = PixelOffsetMode.HighQuality;
-                        g.DrawImage(originalBmp, 0, 0, sz, sz);
-                    }
-
-                    IntPtr h = resized.GetHicon();
-                    try
-                    {
-                        using var tmp = Icon.FromHandle(h);
-                        return (Icon)tmp.Clone();
-                    }
-                    finally { DestroyIcon(h); }
                 }
             }
-            catch (Exception ex)
+            catch { }
+            return null;
+        }
+
+        private static Icon ResizeToIcon(Bitmap source, int size)
+        {
+            using var resized = new Bitmap(size, size);
+            using (var g = Graphics.FromImage(resized))
             {
-                Debug.WriteLine($"[IconHelper] CreateTrayIcon failed: {ex.Message}");
+                g.Clear(Color.Transparent);
+                g.SmoothingMode = SmoothingMode.HighQuality;
+                g.InterpolationMode = InterpolationMode.HighQualityBicubic;
+                g.PixelOffsetMode = PixelOffsetMode.HighQuality;
+                g.DrawImage(source, 0, 0, size, size);
             }
+            return BitmapToIcon(resized);
+        }
 
-            return CreateAppIcon();
+        /// <summary>Converts a bitmap to a managed Icon and releases the native HICON.</summary>
+        private static Icon BitmapToIcon(Bitmap bmp)
+        {
+            IntPtr hIcon = bmp.GetHicon();
+            try
+            {
+                using var temp = Icon.FromHandle(hIcon);
+                return (Icon)temp.Clone();
+            }
+            finally
+            {
+                DestroyIcon(hIcon);
+            }
         }
 
         private static Icon GenerateFallbackIcon()
@@ -211,16 +187,7 @@ namespace EHelper.UI
                 g.DrawString("E", font, textBrush, new RectangleF(0, -1, size, size), format);
             }
 
-            IntPtr hIcon = bmp.GetHicon();
-            try
-            {
-                using var temp = Icon.FromHandle(hIcon);
-                return (Icon)temp.Clone();
-            }
-            finally
-            {
-                DestroyIcon(hIcon);
-            }
+            return BitmapToIcon(bmp);
         }
     }
 }

@@ -3,7 +3,7 @@ using System.Text.Json.Serialization;
 
 namespace EHelper.Core
 {
-    public class AppProfile
+    public class AppProfile : ILightingProfile
     {
         public string Id { get; set; } = Guid.NewGuid().ToString("N");
         public string Name { get; set; } = string.Empty;
@@ -32,31 +32,34 @@ namespace EHelper.Core
         [JsonIgnore]
         public string CleanProcessName => !string.IsNullOrEmpty(ProcessName) ? System.IO.Path.GetFileName(ProcessName) : "";
 
-        public AppProfile Clone()
+        [JsonIgnore]
+        public (byte r, byte g, byte b) Color
         {
-            return new AppProfile
-            {
-                Id = this.Id,
-                Name = this.Name,
-                ProcessName = this.ProcessName,
-                AppPath = this.AppPath,
-                PowerMode = this.PowerMode,
-                LedMode = this.LedMode,
-                LedBrightness = this.LedBrightness,
-                CycleSpeed = this.CycleSpeed,
-                Red = this.Red,
-                Green = this.Green,
-                Blue = this.Blue,
-                ZoneLeftRed = this.ZoneLeftRed,
-                ZoneLeftGreen = this.ZoneLeftGreen,
-                ZoneLeftBlue = this.ZoneLeftBlue,
-                ZoneCenterRed = this.ZoneCenterRed,
-                ZoneCenterGreen = this.ZoneCenterGreen,
-                ZoneCenterBlue = this.ZoneCenterBlue,
-                ZoneRightRed = this.ZoneRightRed,
-                ZoneRightGreen = this.ZoneRightGreen,
-                ZoneRightBlue = this.ZoneRightBlue
-            };
+            get => (Red, Green, Blue);
+            set => (Red, Green, Blue) = value;
         }
+
+        [JsonIgnore]
+        public (byte r, byte g, byte b) ZoneLeft
+        {
+            get => (ZoneLeftRed, ZoneLeftGreen, ZoneLeftBlue);
+            set => (ZoneLeftRed, ZoneLeftGreen, ZoneLeftBlue) = value;
+        }
+
+        [JsonIgnore]
+        public (byte r, byte g, byte b) ZoneCenter
+        {
+            get => (ZoneCenterRed, ZoneCenterGreen, ZoneCenterBlue);
+            set => (ZoneCenterRed, ZoneCenterGreen, ZoneCenterBlue) = value;
+        }
+
+        [JsonIgnore]
+        public (byte r, byte g, byte b) ZoneRight
+        {
+            get => (ZoneRightRed, ZoneRightGreen, ZoneRightBlue);
+            set => (ZoneRightRed, ZoneRightGreen, ZoneRightBlue) = value;
+        }
+
+        public AppProfile Clone() => (AppProfile)MemberwiseClone();
     }
 }

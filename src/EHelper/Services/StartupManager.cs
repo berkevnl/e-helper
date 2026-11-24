@@ -100,31 +100,6 @@ namespace EHelper.Services
             }
         }
 
-        public static void EnsureStartupSynchronized(bool userWantsStartup)
-        {
-            try
-            {
-                bool isEnabled = IsStartupEnabled();
-                if (userWantsStartup && !isEnabled)
-                {
-                    SetStartup(true);
-                }
-                else if (!userWantsStartup && isEnabled)
-                {
-                    SetStartup(false);
-                }
-                else if (userWantsStartup && isEnabled)
-                {
-                    // Refresh task action in case executable path changed, updated, or needs battery settings applied
-                    SetStartup(true);
-                }
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[StartupManager] EnsureStartupSynchronized failed: {ex.Message}");
-            }
-        }
-
         private static bool CreateTaskViaXml(string exePath, string workDir)
         {
             string tempXml = Path.Combine(Path.GetTempPath(), $"ehelper_task_{Guid.NewGuid():N}.xml");

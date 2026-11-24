@@ -37,8 +37,6 @@ namespace EHelper.Hardware.Common
         private static int _initRetryCount;
         private static string _cachedGpuName = "";
 
-        public static string GetCachedGpuName() => _cachedGpuName;
-
         public static (uint Temp, uint FanPercent, uint GpuUsagePercent, string GpuName) GetGpuMetrics()
         {
             if (_dllMissing) return (0, 0, 0, _cachedGpuName);
@@ -57,13 +55,6 @@ namespace EHelper.Hardware.Common
                     {
                         _initialized = true;
                         _initRetryCount = 0;
-
-                        // Acquire GPU Name once
-                        var sb = new StringBuilder(128);
-                        if (nvmlDeviceGetName(_deviceHandle, sb, (uint)sb.Capacity) == 0)
-                        {
-                            _cachedGpuName = FormatGpuName(sb.ToString());
-                        }
                     }
                     else
                     {
@@ -85,8 +76,10 @@ namespace EHelper.Hardware.Common
                     }
                     else if (tempRes is 15 or 999) // NVML_ERROR_GPU_IS_LOST / GPU asleep
                     {
+                        // Re-initialise on a later poll; skip the remaining queries on the stale handle
                         _initialized = false;
                         _deviceHandle = IntPtr.Zero;
+                        return (0, 0, 0, _cachedGpuName);
                     }
 
                     if (nvmlDeviceGetFanSpeed(_deviceHandle, out uint f) == 0)
@@ -98,6 +91,7 @@ namespace EHelper.Hardware.Common
                         gpuUsage = Math.Min(util.Gpu, 100);
                     }
 
+                    // Acquire GPU name once
                     if (string.IsNullOrEmpty(_cachedGpuName))
                     {
                         var sb = new StringBuilder(128);
@@ -110,13 +104,9 @@ namespace EHelper.Hardware.Common
                     return (temp, fan, gpuUsage, _cachedGpuName);
                 }
             }
-            catch (DllNotFoundException)
+            catch (Exception ex) when (ex is DllNotFoundException or EntryPointNotFoundException)
             {
-                _dllMissing = true;
-            }
-            catch (EntryPointNotFoundException)
-            {
-                _dllMissing = true;
+                _dllMissing = true; // no NVIDIA driver: stop trying
             }
             catch
             {

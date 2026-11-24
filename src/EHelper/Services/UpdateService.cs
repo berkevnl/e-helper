@@ -2,6 +2,7 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.IO.Compression;
+using System.Linq;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Text.Json;
@@ -25,7 +26,8 @@ namespace EHelper.Services
     public static class UpdateService
     {
         private const string GitHubRepo = "berkevnl/E-Helper";
-        public const string CurrentVersion = "1.3.1";
+        public static readonly string CurrentVersion =
+            typeof(UpdateService).Assembly.GetName().Version?.ToString(3) ?? "0.0.0";
 
         private static readonly HttpClient HttpClient = new();
 
@@ -66,20 +68,13 @@ namespace EHelper.Services
                 var root = doc.RootElement;
 
                 string tagName = root.TryGetProperty("tag_name", out var tagProp) ? tagProp.GetString() ?? "" : "";
-                string body = root.TryGetProperty("body", out var bodyProp) ? bodyProp.GetString() ?? "" : "";
                 string cleanVersion = tagName.TrimStart('v', 'V').Trim();
 
                 result.LatestVersion = string.IsNullOrEmpty(cleanVersion) ? CurrentVersion : cleanVersion;
-                result.ReleaseNotes = body;
-
-                if (Version.TryParse(cleanVersion, out var remoteVersion) &&
-                    Version.TryParse(CurrentVersion, out var localVersion))
-                {
-                    if (remoteVersion > localVersion)
-                    {
-                        result.HasUpdate = true;
-                    }
-                }
+                result.ReleaseNotes = root.TryGetProperty("body", out var bodyProp) ? bodyProp.GetString() ?? "" : "";
+                result.HasUpdate = Version.TryParse(cleanVersion, out var remoteVersion) &&
+                                   Version.TryParse(CurrentVersion, out var localVersion) &&
+                                   remoteVersion > localVersion;
 
                 string? zipUrl = null;
                 string? exeUrl = null;
@@ -158,9 +153,9 @@ namespace EHelper.Services
                     long totalRead = 0;
                     int bytesRead;
 
-                    while ((bytesRead = await downloadStream.ReadAsync(buffer, 0, buffer.Length)) > 0)
+                    while ((bytesRead = await downloadStream.ReadAsync(buffer)) > 0)
                     {
-                        await fileStream.WriteAsync(buffer, 0, bytesRead);
+                        await fileStream.WriteAsync(buffer.AsMemory(0, bytesRead));
                         totalRead += bytesRead;
 
                         if (totalBytes.HasValue && totalBytes.Value > 0)
@@ -184,29 +179,16 @@ namespace EHelper.Services
 
                 if (isZip)
                 {
+                    // updateWorkDir is a fresh GUID folder, so the extract dir never pre-exists
                     string extractDir = Path.Combine(updateWorkDir, "extracted");
-                    if (Directory.Exists(extractDir))
-                    {
-                        try { Directory.Delete(extractDir, true); } catch { }
-                    }
                     Directory.CreateDirectory(extractDir);
 
                     ZipFile.ExtractToDirectory(downloadedFilePath, extractDir);
 
-                    // Find the extracted E-Helper.exe
-                    string[] foundExes = Directory.GetFiles(extractDir, "E-Helper.exe", SearchOption.AllDirectories);
-                    if (foundExes.Length > 0)
-                    {
-                        newExePath = foundExes[0];
-                    }
-                    else
-                    {
-                        string[] anyExes = Directory.GetFiles(extractDir, "*.exe", SearchOption.AllDirectories);
-                        if (anyExes.Length > 0)
-                        {
-                            newExePath = anyExes[0];
-                        }
-                    }
+                    // Find the extracted E-Helper.exe (fallback: any .exe in the package)
+                    newExePath = Directory.GetFiles(extractDir, "E-Helper.exe", SearchOption.AllDirectories).FirstOrDefault()
+                              ?? Directory.GetFiles(extractDir, "*.exe", SearchOption.AllDirectories).FirstOrDefault()
+                              ?? "";
                 }
                 else
                 {

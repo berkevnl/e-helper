@@ -15,12 +15,6 @@ namespace EHelper.Hardware.Casper
         public uint a6;     // Arg 5 / Return 5
         public uint rev7a;  // Reserved
         public uint rev7b;  // Reserved
-
-        public void Clear()
-        {
-            a0 = 0; a1 = 0; a2 = 0; a3 = 0;
-            a4 = 0; a5 = 0; a6 = 0; rev7a = 0; rev7b = 0;
-        }
     }
 
     public static class ExcaliburSmiHelper

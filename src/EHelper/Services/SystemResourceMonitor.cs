@@ -51,8 +51,6 @@ namespace EHelper.Services
         private static extern bool GetSystemTimes(out FileTimeUnion idleTime, out FileTimeUnion kernelTime, out FileTimeUnion userTime);
 
         private static ulong _prevIdleTime;
-        private static ulong _prevKernelTime;
-        private static ulong _prevUserTime;
         private static ulong _prevTotalTime;
         private static int _lastCpuPercent;
 
@@ -91,7 +89,7 @@ namespace EHelper.Services
             int ramPercent = 0;
 
             var memStatus = new MEMORYSTATUSEX();
-            memStatus.dwLength = (uint)Marshal.SizeOf(typeof(MEMORYSTATUSEX));
+            memStatus.dwLength = (uint)Marshal.SizeOf<MEMORYSTATUSEX>();
             if (GlobalMemoryStatusEx(ref memStatus))
             {
                 double total = memStatus.ullTotalPhys / (1024.0 * 1024 * 1024);
@@ -148,9 +146,7 @@ namespace EHelper.Services
                 if (GetSystemTimes(out var idle, out var kernel, out var user))
                 {
                     ulong idleVal = idle.Value;
-                    ulong kernelVal = kernel.Value;
-                    ulong userVal = user.Value;
-                    ulong totalVal = kernelVal + userVal;
+                    ulong totalVal = kernel.Value + user.Value; // kernel time includes idle time
 
                     if (_prevTotalTime > 0 && totalVal > _prevTotalTime)
                     {
@@ -164,8 +160,6 @@ namespace EHelper.Services
                     }
 
                     _prevIdleTime = idleVal;
-                    _prevKernelTime = kernelVal;
-                    _prevUserTime = userVal;
                     _prevTotalTime = totalVal;
                 }
             }

@@ -1,19 +1,14 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Globalization;
 using System.IO;
-using System.Linq;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
-using System.Windows.Media;
 using EHelper.Core;
 using EHelper.Services;
 using Microsoft.Win32;
 
-using Button = System.Windows.Controls.Button;
-using MediaColor = System.Windows.Media.Color;
 using MessageBox = System.Windows.MessageBox;
 using OpenFileDialog = Microsoft.Win32.OpenFileDialog;
 
@@ -23,8 +18,8 @@ namespace EHelper.UI
     {
         private readonly AppProfile _profile;
         private readonly bool _isNew;
+        private string? _browsedAppPath;
 
-        public AppProfile Profile => _profile;
         public bool RecaptureRequested { get; private set; } = false;
 
         public ProfileEditWindow(AppProfile profile, bool isNew, bool isDark, string accentHex)
@@ -42,64 +37,19 @@ namespace EHelper.UI
 
         private void ApplyTheme(bool isDark, string accentHex)
         {
-            var accent = ParseColor(accentHex, MediaColor.FromRgb(34, 211, 238));
-
-            if (isDark)
-            {
-                Resources["WindowBg"] = new SolidColorBrush(MediaColor.FromRgb(20, 21, 27));       // #14151B
-                Resources["CardBg"] = new SolidColorBrush(MediaColor.FromRgb(28, 30, 38));         // #1C1E26
-                Resources["CardHoverBg"] = new SolidColorBrush(MediaColor.FromRgb(34, 37, 48));    // #222530
-                Resources["CardBorder"] = new SolidColorBrush(MediaColor.FromRgb(37, 40, 52));     // #252834
-                Resources["CardActiveBorder"] = new SolidColorBrush(accent);
-                Resources["CardActiveBg"] = new SolidColorBrush(MediaColor.FromArgb(50, accent.R, accent.G, accent.B));
-                Resources["TextPrimary"] = new SolidColorBrush(MediaColor.FromRgb(255, 255, 255));
-                Resources["TextSecondary"] = new SolidColorBrush(MediaColor.FromRgb(212, 215, 226));
-                Resources["TextMuted"] = new SolidColorBrush(MediaColor.FromRgb(101, 106, 123));   // #656A7B
-                Resources["AccentColor"] = new SolidColorBrush(accent);
-                Resources["AccentCyan"] = new SolidColorBrush(accent);
-                Resources["SegmentBg"] = new SolidColorBrush(MediaColor.FromRgb(34, 37, 48));
-                Resources["SegmentBorder"] = new SolidColorBrush(MediaColor.FromRgb(45, 49, 63));
-                Resources["BadgeBg"] = new SolidColorBrush(MediaColor.FromRgb(34, 36, 47));
-                Resources["BadgeBorder"] = new SolidColorBrush(MediaColor.FromRgb(45, 49, 63));
-            }
-            else
-            {
-                Resources["WindowBg"] = new SolidColorBrush(MediaColor.FromRgb(248, 250, 252));
-                Resources["CardBg"] = new SolidColorBrush(MediaColor.FromRgb(255, 255, 255));
-                Resources["CardHoverBg"] = new SolidColorBrush(MediaColor.FromRgb(241, 245, 249));
-                Resources["CardBorder"] = new SolidColorBrush(MediaColor.FromRgb(226, 232, 240));
-                Resources["CardActiveBorder"] = new SolidColorBrush(accent);
-                Resources["CardActiveBg"] = new SolidColorBrush(MediaColor.FromArgb(30, accent.R, accent.G, accent.B));
-                Resources["TextPrimary"] = new SolidColorBrush(MediaColor.FromRgb(15, 23, 42));
-                Resources["TextSecondary"] = new SolidColorBrush(MediaColor.FromRgb(51, 65, 85));
-                Resources["TextMuted"] = new SolidColorBrush(MediaColor.FromRgb(100, 116, 139));
-                Resources["AccentColor"] = new SolidColorBrush(accent);
-                Resources["AccentCyan"] = new SolidColorBrush(accent);
-                Resources["SegmentBg"] = new SolidColorBrush(MediaColor.FromRgb(241, 245, 249));
-                Resources["SegmentBorder"] = new SolidColorBrush(MediaColor.FromRgb(226, 232, 240));
-                Resources["BadgeBg"] = new SolidColorBrush(MediaColor.FromRgb(241, 245, 249));
-                Resources["BadgeBorder"] = new SolidColorBrush(MediaColor.FromRgb(203, 213, 225));
-            }
+            var accent = ThemeHelper.ApplyBasePalette(Resources, isDark, accentHex);
+            ThemeHelper.Set(Resources, "AccentCyan", accent);
+            ThemeHelper.Set(Resources, "SegmentBg", isDark ? ThemeHelper.Rgb(34, 37, 48) : ThemeHelper.Rgb(241, 245, 249));
+            ThemeHelper.Set(Resources, "SegmentBorder", isDark ? ThemeHelper.Rgb(45, 49, 63) : ThemeHelper.Rgb(226, 232, 240));
 
             // Propagate theme brushes to Application resources so that Popups/dropdowns render correctly themed
-            if (System.Windows.Application.Current != null)
-            {
-                System.Windows.Application.Current.Resources["CardBg"] = Resources["CardBg"];
-                System.Windows.Application.Current.Resources["CardHoverBg"] = Resources["CardHoverBg"];
-                System.Windows.Application.Current.Resources["CardBorder"] = Resources["CardBorder"];
-                System.Windows.Application.Current.Resources["CardActiveBorder"] = Resources["CardActiveBorder"];
-                System.Windows.Application.Current.Resources["CardActiveBg"] = Resources["CardActiveBg"];
-                System.Windows.Application.Current.Resources["TextPrimary"] = Resources["TextPrimary"];
-                System.Windows.Application.Current.Resources["TextSecondary"] = Resources["TextSecondary"];
-                System.Windows.Application.Current.Resources["TextMuted"] = Resources["TextMuted"];
-                System.Windows.Application.Current.Resources["AccentColor"] = Resources["AccentColor"];
-            }
+            ThemeHelper.PublishToApplication(Resources);
         }
 
         private void ApplyLocalization()
         {
             TxtDialogTitle.Text = _isNew ? LocalizationManager.NewProfileHeader : LocalizationManager.EditProfileHeader;
-            LblCapturedSettings.Text = LocalizationManager.IsTurkish ? "Seçilen Donanım Ayarları:" : "Captured Hardware Settings:";
+            LblCapturedSettings.Text = LocalizationManager.CapturedSettingsLabel;
             LblProfileName.Text = LocalizationManager.ProfileNameLabel;
             LblProfileApp.Text = LocalizationManager.ProfileAppLabel;
             BtnBrowse.Content = LocalizationManager.Browse;
@@ -120,47 +70,8 @@ namespace EHelper.UI
             TxtProfileName.Text = _profile.Name;
             TxtProcessName.Text = _profile.ProcessName;
 
-            // Summary power mode
-            string powerName = _profile.PowerMode switch
-            {
-                PowerMode.Office => LocalizationManager.PowerOffice,
-                PowerMode.Gaming => LocalizationManager.PowerGaming,
-                PowerMode.HighPerformance => LocalizationManager.PowerTurbo,
-                _ => LocalizationManager.PowerGaming
-            };
-            string powerLabel = LocalizationManager.IsTurkish ? "Güç" : "Power";
-            TxtSummaryPower.Text = $"⚡ {powerLabel}: {powerName}";
-
-            // Summary RGB mode
-            string ledName = _profile.LedMode switch
-            {
-                LedMode.Rainbow => LocalizationManager.LedRainbow,
-                LedMode.Cycle => LocalizationManager.LedCycle,
-                LedMode.Static => LocalizationManager.LedStatic,
-                LedMode.Breathing => LocalizationManager.LedBreathing,
-                LedMode.ColorfulCycle => LocalizationManager.LedDynamic,
-                LedMode.TripleZone => LocalizationManager.LedTripleZone,
-                _ => LocalizationManager.LedStatic
-            };
-
-            string brightText = _profile.LedBrightness switch { 0 => "%0", 1 => "%50", _ => "%100" };
-            string ledDetails;
-            if (_profile.LedMode == LedMode.Rainbow || _profile.LedMode == LedMode.Cycle)
-            {
-                string speedText = _profile.CycleSpeed switch
-                {
-                    1 => LocalizationManager.SpeedMedium,
-                    2 => LocalizationManager.SpeedFast,
-                    _ => LocalizationManager.SpeedSlow
-                };
-                ledDetails = $"({brightText}, {speedText})";
-            }
-            else
-            {
-                ledDetails = $"({brightText})";
-            }
-
-            TxtSummaryRgb.Text = $"🌈 RGB: {ledName} {ledDetails}";
+            TxtSummaryPower.Text = $"⚡ {LocalizationManager.PowerLabel}: {LocalizationManager.GetPowerModeName(_profile.PowerMode)}";
+            TxtSummaryRgb.Text = $"🌈 RGB: {LocalizationManager.GetLedModeName(_profile.LedMode)} {LocalizationManager.FormatLedDetails(_profile)}";
         }
 
         private void PopulateRunningApps()
@@ -182,18 +93,23 @@ namespace EHelper.UI
                     "lsass", "conhost", "explorer", "e-helper", "taskhostw", "sihost", "fontdrvhost"
                 };
 
-                var procs = Process.GetProcesses()
-                    .Where(p => !ignored.Contains(p.ProcessName) && !p.ProcessName.StartsWith("System", StringComparison.OrdinalIgnoreCase))
-                    .Select(p =>
+                var running = Process.GetProcesses();
+                var names = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+                foreach (var p in running)
+                {
+                    try
                     {
-                        try { return p.ProcessName + ".exe"; } catch { return ""; }
-                    })
-                    .Where(name => !string.IsNullOrEmpty(name))
-                    .Distinct(StringComparer.OrdinalIgnoreCase)
-                    .OrderBy(name => name, StringComparer.OrdinalIgnoreCase)
-                    .ToList();
+                        string name = p.ProcessName;
+                        if (!ignored.Contains(name) && !name.StartsWith("System", StringComparison.OrdinalIgnoreCase))
+                        {
+                            names.Add(name + ".exe");
+                        }
+                    }
+                    catch { }
+                    finally { p.Dispose(); }
+                }
 
-                foreach (var exe in procs)
+                foreach (var exe in names)
                 {
                     CmbRunningApps.Items.Add(new ComboBoxItem
                     {
@@ -230,7 +146,7 @@ namespace EHelper.UI
             {
                 string filename = Path.GetFileName(dlg.FileName);
                 TxtProcessName.Text = filename;
-                _profile.AppPath = dlg.FileName;
+                _browsedAppPath = dlg.FileName; // committed to the profile only on Save
 
                 if (string.IsNullOrWhiteSpace(TxtProfileName.Text))
                 {
@@ -246,7 +162,7 @@ namespace EHelper.UI
 
             if (string.IsNullOrWhiteSpace(name))
             {
-                MessageBox.Show(LocalizationManager.IsTurkish ? "Lütfen profil adı girin." : "Please enter a profile name.",
+                MessageBox.Show(LocalizationManager.ProfileNameRequired,
                     "E-Helper", MessageBoxButton.OK, MessageBoxImage.Warning);
                 TxtProfileName.Focus();
                 return;
@@ -254,7 +170,7 @@ namespace EHelper.UI
 
             if (string.IsNullOrWhiteSpace(exe))
             {
-                MessageBox.Show(LocalizationManager.IsTurkish ? "Lütfen bir uygulama (.exe) seçin." : "Please select an application (.exe).",
+                MessageBox.Show(LocalizationManager.ProfileAppRequired,
                     "E-Helper", MessageBoxButton.OK, MessageBoxImage.Warning);
                 return;
             }
@@ -266,6 +182,10 @@ namespace EHelper.UI
 
             _profile.Name = name;
             _profile.ProcessName = exe;
+            if (_browsedAppPath != null)
+            {
+                _profile.AppPath = _browsedAppPath;
+            }
 
             DialogResult = true;
             Close();
@@ -283,24 +203,6 @@ namespace EHelper.UI
             {
                 DragMove();
             }
-        }
-
-        private static MediaColor ParseColor(string hex, MediaColor fallback)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(hex)) return fallback;
-                string clean = hex.Trim().TrimStart('#');
-                if (clean.Length == 6 &&
-                    byte.TryParse(clean.Substring(0, 2), NumberStyles.HexNumber, null, out byte r) &&
-                    byte.TryParse(clean.Substring(2, 2), NumberStyles.HexNumber, null, out byte g) &&
-                    byte.TryParse(clean.Substring(4, 2), NumberStyles.HexNumber, null, out byte b))
-                {
-                    return MediaColor.FromRgb(r, g, b);
-                }
-            }
-            catch { }
-            return fallback;
         }
     }
 }

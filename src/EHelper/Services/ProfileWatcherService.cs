@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
@@ -28,8 +29,6 @@ namespace EHelper.Services
         public event Action<AppProfile>? ProfileActivated;
         public event Action? ProfileDeactivated;
 
-        public string? ActiveProfileName { get; private set; }
-
         public ProfileWatcherService(ConfigManager config)
         {
             _config = config ?? throw new ArgumentNullException(nameof(config));
@@ -46,6 +45,8 @@ namespace EHelper.Services
             _timer.Change(Timeout.Infinite, Timeout.Infinite);
         }
 
+        private static string TargetName(AppProfile p) => Path.GetFileNameWithoutExtension(p.ProcessName).Trim();
+
         private void CheckForegroundProcess(object? state)
         {
             if (_isDisposed) return;
@@ -53,49 +54,25 @@ namespace EHelper.Services
 
             try
             {
-                var profiles = _config.CurrentSettings.Profiles;
-                if (profiles == null || profiles.Count == 0)
+                // Snapshot: the list may be edited from the Settings window while we iterate
+                var profiles = _config.CurrentSettings.Profiles?.ToArray();
+                if (profiles == null || profiles.Length == 0)
                 {
-                    if (_currentActiveProfileId != null)
-                    {
-                        _currentActiveProfileId = null;
-                        _activeProcessName = null;
-                        _activeProcessPid = 0;
-                        ActiveProfileName = null;
-                        ProfileDeactivated?.Invoke();
-                    }
+                    DeactivateCurrent();
                     return;
                 }
 
-                // 1. Check foreground window process first (highest priority)
-                string currentForegroundExe = "";
-                uint fgPid = 0;
-                IntPtr fgHwnd = GetForegroundWindow();
-                if (fgHwnd != IntPtr.Zero)
-                {
-                    GetWindowThreadProcessId(fgHwnd, out fgPid);
-                    if (fgPid > 0)
-                    {
-                        try
-                        {
-                            using var proc = Process.GetProcessById((int)fgPid);
-                            currentForegroundExe = proc.ProcessName; // without .exe
-                        }
-                        catch { }
-                    }
-                }
-
+                // Priority A: Active foreground window matches a profile
+                var (fgName, fgPid) = GetForegroundProcess();
                 AppProfile? matchedProfile = null;
                 uint matchedPid = 0;
 
-                // Priority A: Active foreground window matches a profile
-                if (!string.IsNullOrEmpty(currentForegroundExe))
+                if (!string.IsNullOrEmpty(fgName))
                 {
                     foreach (var p in profiles)
                     {
-                        if (string.IsNullOrWhiteSpace(p.ProcessName)) continue;
-                        string cleanTarget = Path.GetFileNameWithoutExtension(p.ProcessName).Trim();
-                        if (string.Equals(cleanTarget, currentForegroundExe, StringComparison.OrdinalIgnoreCase))
+                        if (!string.IsNullOrWhiteSpace(p.ProcessName) &&
+                            string.Equals(TargetName(p), fgName, StringComparison.OrdinalIgnoreCase))
                         {
                             matchedProfile = p;
                             matchedPid = fgPid;
@@ -104,85 +81,44 @@ namespace EHelper.Services
                     }
                 }
 
-                // Priority B: If foreground window did not match, check if current active profile is still alive (sticky session)
-                if (matchedProfile == null && _currentActiveProfileId != null && !string.IsNullOrEmpty(_activeProcessName))
+                // Priority B: Foreground did not match, keep the current profile while its app is still running
+                // (e.g. user Alt-Tabbed to desktop or browser)
+                if (matchedProfile == null && _currentActiveProfileId != null && !string.IsNullOrEmpty(_activeProcessName) &&
+                    IsActiveProcessStillRunning())
                 {
-                    bool isCurrentActiveStillRunning = false;
-                    if (_activeProcessPid > 0)
-                    {
-                        try
-                        {
-                            using var proc = Process.GetProcessById((int)_activeProcessPid);
-                            isCurrentActiveStillRunning = !proc.HasExited;
-                        }
-                        catch
-                        {
-                            isCurrentActiveStillRunning = false;
-                        }
-                    }
-
-                    if (!isCurrentActiveStillRunning)
-                    {
-                        try
-                        {
-                            var procs = Process.GetProcessesByName(_activeProcessName);
-                            isCurrentActiveStillRunning = procs != null && procs.Length > 0;
-                            if (isCurrentActiveStillRunning && procs!.Length > 0)
-                            {
-                                _activeProcessPid = (uint)procs[0].Id;
-                            }
-                        }
-                        catch { }
-                    }
-
-                    if (isCurrentActiveStillRunning)
-                    {
-                        // Current profile application is still running (e.g. user Alt-Tabbed to desktop or browser)
-                        return;
-                    }
+                    return;
                 }
 
-                // Priority C: Check if ANY profiled application is currently running on the PC (background / launched app detection)
+                // Priority C: Any profiled application running in the background (first match in profile order)
                 if (matchedProfile == null)
                 {
+                    var running = GetRunningProcessIds();
                     foreach (var p in profiles)
                     {
-                        if (string.IsNullOrWhiteSpace(p.ProcessName)) continue;
-                        string cleanTarget = Path.GetFileNameWithoutExtension(p.ProcessName).Trim();
-                        try
+                        if (!string.IsNullOrWhiteSpace(p.ProcessName) && running.TryGetValue(TargetName(p), out int pid))
                         {
-                            var runningProcs = Process.GetProcessesByName(cleanTarget);
-                            if (runningProcs != null && runningProcs.Length > 0)
-                            {
-                                matchedProfile = p;
-                                matchedPid = (uint)runningProcs[0].Id;
-                                break;
-                            }
+                            matchedProfile = p;
+                            matchedPid = (uint)pid;
+                            break;
                         }
-                        catch { }
                     }
                 }
 
-                // 2. State transition
+                // State transition
                 if (matchedProfile != null)
                 {
                     if (_currentActiveProfileId != matchedProfile.Id)
                     {
                         _currentActiveProfileId = matchedProfile.Id;
-                        _activeProcessName = Path.GetFileNameWithoutExtension(matchedProfile.ProcessName).Trim();
+                        _activeProcessName = TargetName(matchedProfile);
                         _activeProcessPid = matchedPid;
-                        ActiveProfileName = matchedProfile.Name;
                         ProfileActivated?.Invoke(matchedProfile);
                     }
                 }
-                else if (_currentActiveProfileId != null)
+                else
                 {
                     // Profiled application closed and no other profiled app is running
-                    _currentActiveProfileId = null;
-                    _activeProcessName = null;
-                    _activeProcessPid = 0;
-                    ActiveProfileName = null;
-                    ProfileDeactivated?.Invoke();
+                    DeactivateCurrent();
                 }
             }
             catch
@@ -193,6 +129,88 @@ namespace EHelper.Services
             {
                 Interlocked.Exchange(ref _isChecking, 0);
             }
+        }
+
+        private void DeactivateCurrent()
+        {
+            if (_currentActiveProfileId == null) return;
+
+            _currentActiveProfileId = null;
+            _activeProcessName = null;
+            _activeProcessPid = 0;
+            ProfileDeactivated?.Invoke();
+        }
+
+        private static (string Name, uint Pid) GetForegroundProcess()
+        {
+            IntPtr hwnd = GetForegroundWindow();
+            if (hwnd == IntPtr.Zero) return ("", 0);
+
+            GetWindowThreadProcessId(hwnd, out uint pid);
+            if (pid == 0) return ("", 0);
+
+            try
+            {
+                using var proc = Process.GetProcessById((int)pid);
+                return (proc.ProcessName, pid); // without .exe
+            }
+            catch
+            {
+                return ("", pid);
+            }
+        }
+
+        private bool IsActiveProcessStillRunning()
+        {
+            if (_activeProcessPid > 0)
+            {
+                try
+                {
+                    using var proc = Process.GetProcessById((int)_activeProcessPid);
+                    if (!proc.HasExited) return true;
+                }
+                catch { }
+            }
+
+            // PID gone (e.g. launcher restarted the game): look the process up by name
+            try
+            {
+                var procs = Process.GetProcessesByName(_activeProcessName);
+                try
+                {
+                    if (procs.Length > 0)
+                    {
+                        _activeProcessPid = (uint)procs[0].Id;
+                        return true;
+                    }
+                }
+                finally
+                {
+                    foreach (var p in procs) p.Dispose();
+                }
+            }
+            catch { }
+
+            return false;
+        }
+
+        /// <summary>One process enumeration per tick: name (without .exe) → first PID.</summary>
+        private static Dictionary<string, int> GetRunningProcessIds()
+        {
+            var result = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+            foreach (var proc in Process.GetProcesses())
+            {
+                try
+                {
+                    result.TryAdd(proc.ProcessName, proc.Id);
+                }
+                catch { }
+                finally
+                {
+                    proc.Dispose();
+                }
+            }
+            return result;
         }
 
         public void Dispose()

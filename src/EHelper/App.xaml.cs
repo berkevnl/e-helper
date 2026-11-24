@@ -2,13 +2,10 @@ using System;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Threading;
 using System.Windows;
 using EHelper.Config;
 using EHelper.Core;
-using EHelper.Hardware.Casper;
-using EHelper.Hardware.Simulation;
 using EHelper.Services;
 using EHelper.UI;
 
@@ -79,17 +76,10 @@ namespace EHelper
             {
                 try
                 {
-                    var current = Process.GetCurrentProcess();
+                    using var current = Process.GetCurrentProcess();
                     var others = Process.GetProcessesByName(current.ProcessName);
-                    bool hasActiveOther = false;
-                    foreach (var p in others)
-                    {
-                        if (p.Id != current.Id)
-                        {
-                            hasActiveOther = true;
-                            break;
-                        }
-                    }
+                    bool hasActiveOther = others.Any(p => p.Id != current.Id);
+                    foreach (var p in others) p.Dispose();
 
                     if (!hasActiveOther)
                     {
@@ -130,8 +120,7 @@ namespace EHelper
             try
             {
                 // 1. Initialize Hardware Provider (Auto-detect Casper Excalibur or Mock fallback)
-                var (bridge, isSimulated) = HardwareDetector.DetectAndCreate();
-                _bridge = bridge;
+                _bridge = HardwareDetector.DetectAndCreate().Provider;
 
                 // 2. Initialize Configuration Engine
                 var config = new ConfigManager();
@@ -140,45 +129,23 @@ namespace EHelper
                 _monitor = new HardwareMonitorService(_bridge, config.CurrentSettings.PollingIntervalSeconds);
 
                 // 4. Initialize Main Flyout Window (stays hidden until tray icon clicked or shown)
-                _mainWindow = new MainWindow(_bridge, isSimulated, config, _monitor);
+                _mainWindow = new MainWindow(_bridge, config, _monitor);
 
                 // 5. Initialize Profile Watcher Service for auto application detection
                 _profileWatcher = new ProfileWatcherService(config);
-                _profileWatcher.ProfileActivated += profile =>
-                {
-                    Dispatcher.InvokeAsync(() =>
-                    {
-                        _mainWindow?.ApplyProfile(profile);
-                    });
-                };
-                _profileWatcher.ProfileDeactivated += () =>
-                {
-                    Dispatcher.InvokeAsync(() =>
-                    {
-                        _mainWindow?.RestoreDefaultSettings();
-                    });
-                };
+                _profileWatcher.ProfileActivated += profile => Dispatcher.InvokeAsync(() => _mainWindow?.ApplyProfile(profile));
+                _profileWatcher.ProfileDeactivated += () => Dispatcher.InvokeAsync(() => _mainWindow?.RestoreDefaultSettings());
                 _profileWatcher.Start();
 
                 // 6. Initialize System Tray (Notification Area Icon)
                 _trayManager = new SystemTrayManager(_mainWindow, ShutdownApp);
 
-                // 6. Wire up Telemetry Tooltip & Periodic Memory Optimizer
+                // 7. Wire up Telemetry Tooltip & Periodic Memory Optimizer
                 _monitor.TelemetryUpdated += t =>
                 {
-                    if (_trayManager != null)
-                    {
-                        if (t.IsAvailable)
-                        {
-                            string cpuStr = t.CpuTemperature > 0 ? $"{t.CpuTemperature}°C" : "--°C";
-                            string gpuStr = t.GpuTemperature > 0 ? $"{t.GpuTemperature}°C" : "--°C";
-                            _trayManager.UpdateTooltip($"CPU: {cpuStr} Fan: {t.CpuFanRpm}RPM\nGPU: {gpuStr} Fan: {t.GpuFanRpm}RPM");
-                        }
-                        else
-                        {
-                            _trayManager.UpdateTooltip("CPU: --°C Fan: --RPM\nGPU: --°C Fan: --RPM");
-                        }
-                    }
+                    _trayManager?.UpdateTooltip(t.IsAvailable
+                        ? $"CPU: {FormatTemp(t.CpuTemperature)} Fan: {t.CpuFanRpm}RPM\nGPU: {FormatTemp(t.GpuTemperature)} Fan: {t.GpuFanRpm}RPM"
+                        : "CPU: --°C Fan: --RPM\nGPU: --°C Fan: --RPM");
 
                     // Periodically keep memory lean both in background (5-10 MB) and while UI is open (25-35 MB)
                     if (++_telemetryCounter % 3 == 0)
@@ -187,10 +154,10 @@ namespace EHelper
                     }
                 };
 
-                // 7. Start Telemetry Service after all UI & Tray objects are ready
+                // 8. Start Telemetry Service after all UI & Tray objects are ready
                 _monitor.Start();
 
-                // 8. Register IPC event to allow subsequent launches to activate this window
+                // 9. Register IPC event to allow subsequent launches to activate this window
                 try
                 {
                     _showEvent = new EventWaitHandle(false, EventResetMode.AutoReset, ShowWindowEventName);
@@ -198,17 +165,16 @@ namespace EHelper
                     {
                         Dispatcher.InvokeAsync(() =>
                         {
-                            if (_mainWindow != null)
+                            if (_mainWindow == null) return;
+
+                            if (!_mainWindow.IsVisible)
                             {
-                                if (!_mainWindow.IsVisible)
-                                {
-                                    _mainWindow.ToggleFlyout();
-                                }
-                                else
-                                {
-                                    _mainWindow.Activate();
-                                    _mainWindow.Focus();
-                                }
+                                _mainWindow.ToggleFlyout();
+                            }
+                            else
+                            {
+                                _mainWindow.Activate();
+                                _mainWindow.Focus();
                             }
                         });
                     }, null, -1, false);
@@ -218,20 +184,10 @@ namespace EHelper
                     // Non-critical IPC event failure
                 }
 
-                // 9. If started interactively (not via Windows autostart), show flyout immediately
-                bool startMinimized = false;
-                if (e.Args != null)
-                {
-                    foreach (var arg in e.Args)
-                    {
-                        if (arg.Equals("--autostart", StringComparison.OrdinalIgnoreCase) ||
-                            arg.Equals("--minimized", StringComparison.OrdinalIgnoreCase))
-                        {
-                            startMinimized = true;
-                            break;
-                        }
-                    }
-                }
+                // 10. If started interactively (not via Windows autostart), show flyout immediately
+                bool startMinimized = e.Args?.Any(arg =>
+                    arg.Equals("--autostart", StringComparison.OrdinalIgnoreCase) ||
+                    arg.Equals("--minimized", StringComparison.OrdinalIgnoreCase)) == true;
 
                 if (!startMinimized)
                 {
@@ -295,19 +251,20 @@ namespace EHelper
             base.OnExit(e);
         }
 
+        private static string FormatTemp(byte celsius) => celsius > 0 ? $"{celsius}°C" : "--°C";
+
         private static void LogCrash(string context, Exception ex)
         {
             try
             {
-                string logDir = System.IO.Path.Combine(
+                string logDir = Path.Combine(
                     Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
                     "E-Helper",
                     "logs"
                 );
-                System.IO.Directory.CreateDirectory(logDir);
-                string logFile = System.IO.Path.Combine(logDir, "crash.log");
+                Directory.CreateDirectory(logDir);
                 string entry = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] [{context}] {ex.GetType().FullName}: {ex.Message}\n{ex.StackTrace}\n\n";
-                System.IO.File.AppendAllText(logFile, entry);
+                File.AppendAllText(Path.Combine(logDir, "crash.log"), entry);
             }
             catch { }
         }

@@ -1,240 +1,190 @@
 <p align="center">
-  <img src="docs/cover.png" alt="E-Helper — Casper Excalibur Gaming Laptop Control Center" width="100%">
+  <img src="docs/cover.png" alt="E-Helper — Casper Excalibur Control Center" width="100%">
 </p>
 
-# E-Helper — Casper Excalibur Control Center
+<h1 align="center">E-Helper</h1>
 
 <p align="center">
-  <a href="https://github.com/berkevnl/E-Helper/releases/latest"><img src="https://img.shields.io/github/v/release/berkevnl/E-Helper?style=flat-square&color=0078D4&label=Version" alt="Version"></a>
-  <a href="https://github.com/berkevnl/E-Helper/releases/latest/download/E-Helper-win-x64.zip"><img src="https://img.shields.io/badge/Download-ZIP_Package_(~64_MB)-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Direct Download ZIP"></a>
-  <a href="https://github.com/berkevnl/E-Helper/blob/main/LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-green.svg?style=flat-square" alt="License"></a>
-  <a href="#-why-e-helper-key-advantages"><img src="https://img.shields.io/badge/RAM-5--10_MB_Tray_/_30--50_MB_Active-success?style=flat-square" alt="RAM Footprint"></a>
-  <a href="https://dotnet.microsoft.com/download/dotnet/8.0"><img src="https://img.shields.io/badge/.NET-8.0_Windows_x64-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 8"></a>
-  <a href="README.tr.md"><img src="https://img.shields.io/badge/Dil-T%C3%BCrk%C3%A7e-red?style=flat-square" alt="Türkçe Döküman"></a>
+  <b>A lightweight, open-source control center for Casper Excalibur gaming laptops.</b><br>
+  Power modes, live telemetry, RGB keyboard lighting and per-app profiles in a single portable executable.
+</p>
+
+<p align="center">
+  <a href="https://github.com/berkevnl/E-Helper/releases/latest"><img src="https://img.shields.io/github/v/release/berkevnl/E-Helper?style=flat-square&color=0078D4&label=release" alt="Latest release"></a>
+  <a href="https://github.com/berkevnl/E-Helper/releases"><img src="https://img.shields.io/github/downloads/berkevnl/E-Helper/total?style=flat-square&color=0078D4&label=downloads" alt="Downloads"></a>
+  <a href="https://dotnet.microsoft.com/download/dotnet/8.0"><img src="https://img.shields.io/badge/.NET-8.0-512BD4?style=flat-square&logo=dotnet&logoColor=white" alt=".NET 8"></a>
+  <img src="https://img.shields.io/badge/platform-Windows%2010%20%7C%2011%20x64-0078D4?style=flat-square&logo=windows&logoColor=white" alt="Windows 10/11 x64">
+  <a href="LICENSE"><img src="https://img.shields.io/badge/license-GPL--3.0-green?style=flat-square" alt="GPL-3.0"></a>
+</p>
+
+<p align="center">
+  <a href="README.tr.md">Türkçe</a> ·
+  <a href="https://github.com/berkevnl/E-Helper/releases/latest">Download</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#compatibility">Compatibility</a> ·
+  <a href="#building-from-source">Build</a>
 </p>
 
 ---
 
-**E-Helper** is an ultra-lightweight, dedicated open-source hardware management utility engineered specifically for **Casper Excalibur** series gaming laptops. It replaces bloated, slow, and resource-heavy vendor software (*Excalibur Control Center*) with a single, standalone portable executable requiring zero installation.
+## Overview
 
-Inspired by the acclaimed **G-Helper** philosophy, E-Helper communicates directly with the laptop's Embedded Controller (EC) via ACPI WMI SMI commands and dedicated NVIDIA NVML APIs. It provides an instantaneous, responsive flyout control panel with **zero background services** and **zero telemetry tracking**.
+**E-Helper** replaces the vendor *Excalibur Control Center* with a small, fast and privacy-respecting utility. It talks directly to the laptop's Embedded Controller (EC) through ACPI WMI and reads NVIDIA GPU data through NVML. There are no background services, no telemetry and nothing to install.
+
+Inspired by [G-Helper](https://github.com/seerge/g-helper), E-Helper lives in the system tray and opens a compact flyout panel with a single click.
 
 <p align="center">
-  <a href="https://github.com/berkevnl/E-Helper/releases/latest/download/E-Helper-win-x64.zip">
-    <img src="https://img.shields.io/badge/DOWNLOAD_LATEST_RELEASE-ZIP_PACKAGE_(~64_MB)-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download E-Helper ZIP Package" height="46">
+  <a href="https://github.com/berkevnl/E-Helper/releases/latest">
+    <img src="https://img.shields.io/badge/Download_latest_release-ZIP_~64_MB-0078D4?style=for-the-badge&logo=windows&logoColor=white" alt="Download the latest release" height="40">
   </a>
   <br>
-  <sub><i>Lightweight compressed portable package (~64 MB) — Extract and run anywhere without installation.<br>For uncompressed standalone executables and release notes, visit <a href="https://github.com/berkevnl/E-Helper/releases/latest">GitHub Releases</a>.</i></sub>
+  <sub>Portable: extract and run. No installer and no separate .NET runtime required.</sub>
 </p>
 
----
+## Highlights
 
-## 📊 OEM Control Center vs. E-Helper
+| | Vendor Control Center | E-Helper |
+| :--- | :--- | :--- |
+| **Memory use** | Several hundred MB | ~5–10 MB in tray · ~30–50 MB with panel open |
+| **Background services** | Multiple resident services | None |
+| **Telemetry / analytics** | Enabled | None, fully local |
+| **Installation** | Installer + drivers | Single portable executable |
+| **Panel open time** | Seconds | Instant |
+| **Settings after reboot** | May reset | Re-applied automatically after logon |
+| **Updates** | Manual download | One-click in-app update |
 
-| Feature / Criterion | Official OEM Control Center | E-Helper (v1.3.1) |
-| :--- | :---: | :---: |
-| **RAM Footprint (Idle / System Tray)** | 150 MB – 350 MB (Often leaks up to 450 MB+) | **5 MB – 10 MB** |
-| **RAM Footprint (Active Window / Flyout)** | 250 MB – 500 MB | **30 MB – 50 MB** (Auto-trimmed via Working Set API) |
-| **Active Background Services & Daemons** | 4 – 6 persistent background services (`ControlCenter.exe`, `FnHotkeyUtility`, `OSDService`, `GCUBridge`) | **0 (Zero background services)** |
-| **Telemetry & Analytics Tracking** | Background telemetry & usage analytics enabled | **0 (Strictly local, zero analytics / tracking)** |
-| **Flyout Launch Latency** | 3 – 6+ seconds (heavy web/hybrid framework) | **Instant (< 100 ms flyout popup)** |
-| **Installation Requirement** | Multi-step installer, background driver hooks, registry overhead | **Single portable executable (Zero installation)** |
-| **Reboot Settings Persistence** | Frequently loses custom fan curves and RGB lighting after reboot or sleep | **100% resilient post-boot sync via delayed EC re-sync** |
-| **Hardware Communication Architecture** | Bloated middleman service stack and background IPC | **Direct ACPI WMI SMI (`0xFA00` / `0xFB00`) & NVIDIA NVML** |
-| **Keyboard Lighting Control** | Basic vendor presets | **3-Zone Custom RGB, High-Refresh Cycle (70 FPS), Left-to-Right Rainbow Wave, 3-Tier Speed Slider** |
-| **Software Updates** | Cumbersome manual downloads and installers | **1-click silent background check, auto-download & restart** |
+## Features
 
----
+### Power modes
+- **Eco**, **Balanced** and **Performance** profiles written directly to the EC.
+- Each mode also switches the matching Windows power plan (Power saver / Balanced / High performance).
 
-## ⚡ Why E-Helper? (Key Advantages)
+### Live telemetry
+- CPU and GPU temperature, fan speed (RPM) and usage.
+- NVIDIA GPU temperature read from the driver via **NVML**, which is more accurate than the EC sensor.
+- RAM and system drive (C:) usage.
+- Tray icon tooltip shows CPU/GPU temperature and fan speed without opening the panel.
 
-1. **Engineered Exclusively for Excalibur:** Built from the ground up tailored to Casper Excalibur motherboard layouts and Quanta EC registers without generic bloated abstractions.
-2. **Microscopic Resource Consumption:** Consumes merely **5 – 10 MB RAM** while idling in the System Tray. Even when the full UI is open, working memory remains capped at **30 – 50 MB** thanks to aggressive automated working-set memory trimming.
-3. **Pure Zero-Bloat Operation:** No background services, no scheduled analytics daemons, and zero CPU cycles consumed when idle.
-4. **Permanent Settings Persistence:** Power profiles, keyboard lighting modes, animation speed, brightness levels, and zone colors are seamlessly retained across cold boots and reboots via Windows Task Scheduler integration and delayed post-boot EC re-synchronization.
-5. **Direct Hardware Bridge:** Issues direct SMI read (`0xFA00`) and write (`0xFB00`) commands to the Embedded Controller and reads die thermals directly from `nvml.dll`, eliminating intermediary vendor daemons.
-6. **Instant-Access System Tray Flyout:** Docks discreetly in the Windows Notification Area. A single click presents an elegant flyout panel that can also be detached and freely moved anywhere on screen.
-7. **Bilingual & Dual Theme Architecture:** Switch instantly between Turkish and English, as well as authentic Matte Dark and High-Contrast Light themes with zero application restarts.
+### RGB keyboard lighting
+| Mode | Description |
+| :--- | :--- |
+| **Static** | One color across the whole keyboard |
+| **Breathing** | Hardware breathing effect |
+| **Dynamic** | Hardware color cycle |
+| **Spectrum** | Smooth, synchronized full-spectrum cycle |
+| **Rainbow** | Rainbow wave flowing left → right |
+| **3-Zone** | Independent color for left, center and right zones |
 
----
+- Brightness: **Off / 50% / 100%**.
+- Animation speed for Spectrum and Rainbow: **Slow / Medium / Fast**.
+- Color picker with HSV canvas, HEX input and quick swatches; the keyboard previews the color live.
+- **Sleep timer:** turns the backlight off after 15 s, 30 s, 45 s, 60 s or 5 min of inactivity and restores it on the next keyboard, mouse or touchpad input.
 
-## 🎯 Features & Capabilities
+### Application profiles
+- Bind a power mode + lighting setup to any game or application (`.exe`).
+- The profile is applied automatically when the application is in use and your own settings are restored when it closes.
+- Pick the app from the list of running processes or browse for the executable.
 
-### 1. ⚡ Power & Performance Profiles
-* **Eco (Office / Tasarruf):** Lowers fan acoustic profile, maximizes battery endurance, and minimizes thermal dissipation for office or quiet workflows.
-* **Balanced (Gaming / Dengeli):** Dynamic fan curve and balanced thermal envelope calibrated for daily multitasking and gaming sessions.
-* **Performance (Turbo / Performans):** Unlocks peak fan RPM, elevates thermal headroom, and sustains maximum CPU/GPU boost clock frequencies.
-* *Integrated with native Windows power schemes (`PowerSetActiveScheme`) for instant system synchronization.*
+### Interface
+- Dark and light themes, plus 8 accent colors.
+- Turkish and English, switchable instantly without restart.
+- Optional start with Windows through Task Scheduler (no UAC prompt at logon).
+- Automatic update check on startup; one click downloads, replaces and restarts the app.
 
-### 2. 📊 Real-Time Hardware Telemetry
-* **Die Thermals & Fan Tachometers:** Live CPU die temperatures (°C) and tachometer fan speeds (RPM).
-* **Direct NVIDIA NVML Interop:** Directly queries `nvml.dll` to read authentic die temperatures and dedicated fan RPM from NVIDIA GeForce RTX/GTX GPUs, bypassing uncalibrated or static EC dummy registers.
-* **System Resource Monitor:** Real-time system RAM allocation (used / total GB and percentage) and primary storage (C:) drive capacity.
-* **Live System Tray Tooltip:** Hovering over the notification tray icon reveals instantaneous CPU/GPU thermals and fan RPM without needing to open the flyout window.
+## Compatibility
 
-### 3. 🌈 Keyboard RGB Lighting Engine
-* **6 Lighting Modes:**
-  * **Static (Sabit):** Uniform single color across all physical keyboard zones.
-  * **Breathing (Nefes):** Native hardware-level smooth breathing cycle with authentic fade to complete darkness and gentle return.
-  * **Dynamic (Dinamik):** Hardware-native continuous color sequence.
-  * **Cycle (Döngü):** Synchronized high-refresh (~70 FPS) full-spectrum cycle where all keys transition in unison through the 360° color spectrum without discrete color jumps or stepping artifacts.
-  * **Rainbow Wave (Gökkuşağı):** Multi-zone spectrum wave flowing smoothly from left to right (WASD → Center → Numpad).
-  * **3-Zone Custom RGB (3-Bölge):** Independent hex color customization for each physical zone.
-* **Interactive 2D 3-Zone Map:** Visual bird's-eye schematic providing direct, clickable color assignment to Left (WASD), Center, and Right (Numpad) keyboard clusters.
-* **Dynamic 3-Tier Speed Slider:** Seamlessly regulate animation speeds (**Slow**, **Medium**, **Fast**) for Cycle and Rainbow Wave modes, with live status updates reflected in the header (`Brightness: 100% - Fast`).
-* **Windows 11-Style Color Picker:** 2D HSV color canvas, 1D hue slider, Hex code input field, RGB numeric controls, and curated quick swatches.
-* **Hardware Brightness Steps:**
-  * `0` : **Off (0%)** — Powers down keyboard LED power delivery planes.
-  * `1` : **50% Brightness** — Balanced ambient illumination.
-  * `2` : **100% Brightness** — Full maximum illumination.
-  * *Supports direct click-to-position on the slider track.*
-* **Cold-Boot Resilience:** Re-synchronizes lighting mode, brightness, speed, and custom colors on system boot.
-* **Smart Inactivity Sleep Timer:** Configure auto-sleep timeouts (15s, 30s, 45s, 60s, or 5m) via the timer button in the RGB header to turn off backlighting when idle; instantly restores active lighting mode and brightness on any keyboard, mouse, or touchpad input.
+E-Helper targets **Casper Excalibur** laptops that use the Quanta ACPI/WMI EC interface.
 
-### 4. 🎨 UI & Visual Ergonomics
-* **Modern Typography:** High-clarity Google Sans and system font stacks rendered with ClearType and Display subpixel rendering modes for crisp legibility.
-* **100% Vector Iconography:** Custom vector icons across all mode buttons, header cards, and controls with zero pixelation or DPI scaling blur.
-* **Instant Theme Toggle:** One-click toggle between Matte Dark and Crisp Light themes.
-* **Non-Blocking Asynchronous UI:** Hardware I/O runs entirely off the UI thread to guarantee stutter-free interactions.
+**Verified on hardware:** G770 · G850 / G860 · G870 · G911
 
-### 5. 🔄 Seamless In-App Auto-Updater
-* **Zero-Delay Startup Check:** Queries GitHub Releases silently in the background on startup with 0 ms impact on application launch.
-* **Interactive Status Indicator:** Displays version status in the bottom-left corner (`Version: 1.3.1` when up to date, red `Download: 1.3.0 → 1.3.1` when an update is available).
-* **One-Click Self-Update:** Automatically downloads the latest standalone package, closes the running process, swaps the binary, and restarts the updated application instantly.
+**Expected to work (same EC interface):** G780 · G900 · G920
 
----
+> [!NOTE]
+> On unsupported machines E-Helper starts in **simulation mode** and does not send any commands to the hardware.
 
-## 💻 Hardware Compatibility
+**Requirements:** Windows 10 or 11 (64-bit), administrator rights (required by Windows for ACPI WMI access). An NVIDIA GPU is optional; it is used for GPU temperature and usage readings.
 
-E-Helper is built specifically for **Casper Excalibur** laptops utilizing Quanta ACPI/WMI Embedded Controller platforms:
+## Getting started
 
-### ✅ Verified on Physical Hardware
-> Tested and confirmed fully functional (power profiles, telemetry readouts, fan tachometers, and RGB keyboard lighting):
-* **Excalibur G770** (Tested & Verified)
-* **Excalibur G850 / G860** (Tested & Verified)
-* **Excalibur G870** (Tested & Verified)
-* **Excalibur G911** (Tested & Verified)
+1. Download `E-Helper-vX.Y.Z-win-x64.zip` from the **[latest release](https://github.com/berkevnl/E-Helper/releases/latest)**.
+2. Extract it to a permanent folder, for example `C:\Tools\E-Helper`.
+3. Run `E-Helper.exe` as administrator.
+4. E-Helper appears in the system tray next to the clock. Click the icon to open the panel.
+5. Optionally enable **Start with Windows** in **Settings**.
 
-### 🔍 Architecture Compatible
-Designed to work across Casper Excalibur models sharing Quanta ACPI/WMI command structures:
-* **Excalibur G780**
-* **Excalibur G900**
-* **Excalibur G920**
-
----
-
-## 🔬 Architecture & How It Works
-
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                        E-Helper (WPF / .NET 8)                         │
-│            Flyout UI  •  System Tray  •  Configuration Engine          │
-└───────────────────┬────────────────────────────────┬───────────────────┘
-                    │                                │
-                    ▼ (ACPI WMI SMI)                 ▼ (NVIDIA NVML)
-        ┌────────────────────────┐      ┌────────────────────────┐
-        │  Casper / Quanta EC    │      │  NVIDIA Dedicated GPU  │
-        │  - Power Profiles      │      │  - True Die Temp       │
-        │  - Fan Tachometers     │      │  - Dedicated Fan RPM   │
-        │  - RGB Keyboard Zones  │      └────────────────────────┘
-        └────────────────────────┘
-```
-
-1. **WMI ACPI SMI Bridge:** Communicates with the hardware Embedded Controller through the Windows WMI namespace (`ROOT\WMI`). Hardware commands are packed into standardized `SMI_STRUCT_S` packets:
-   * `0xFA00`: Command Read (thermal telemetry and fan RPM tachometers).
-   * `0xFB00`: Command Write (performance profile switches, fan speed overrides, LED lighting packets).
-   * Subfunctions: `0x0100` (LED lighting), `0x0200` (CPU/GPU thermals), `0x0205` (Fan speeds), `0x0300` (Power modes).
-2. **NVML Direct Interop:** Loads `nvml.dll` dynamically to read accurate thermal telemetry directly from NVIDIA GeForce GPU driver interfaces, avoiding uncalibrated motherboard sensors.
-3. **Elevated Windows Task Scheduler:** Configures an elevated scheduled task with `HighestAvailable` privileges, enabling seamless startup on Windows logon without triggering UAC elevation prompts.
-4. **Working-Set Memory Trimming:** Employs Windows `SetProcessWorkingSetSize` APIs (`MemoryOptimizer`) to return unneeded physical memory pages to the OS whenever the window closes to the tray.
-
----
-
-## 📂 Project Structure
-
-```
-ehelper/
-├── src/
-│   └── EHelper/
-│       ├── Core/                      # Domain interfaces, enums and data contracts
-│       │   ├── Enums/                 # PowerMode, LightingMode, BrightnessStep, ThemeMode
-│       │   ├── Interfaces/            # IHardwareProvider, ISmiHardwareProvider contracts
-│       │   └── Models/                # HardwareTelemetry, HardwareCapabilities models
-│       ├── Hardware/                  # Low-level hardware abstraction layer
-│       │   ├── Casper/                # ACPI WMI SMI and NVIDIA NVML implementation
-│       │   │   ├── ExcaliburBridge.cs     # Motherboard EC & WMI SMI communication bridge
-│       │   │   ├── ExcaliburSmi.cs        # SMI_STRUCT_S interop structures and P/Invoke
-│       │   │   ├── NvmlHelper.cs          # Direct NVIDIA NVML GPU telemetry integration
-│       │   │   └── ExcaliburPowerPlan.cs  # Windows Power Scheme synchronization
-│       │   └── Simulation/            # Mock hardware provider for development/testing
-│       ├── Services/                  # Application runtime services
-│       │   ├── HardwareMonitorService.cs  # Asynchronous background telemetry polling loop
-│       │   ├── ConfigManager.cs           # User configuration persistence (config.json)
-│       │   ├── StartupManager.cs          # Windows Task Scheduler startup integration
-│       │   ├── UpdateService.cs           # GitHub Releases silent auto-updater
-│       │   ├── MemoryOptimizer.cs         # Automated RAM working-set memory trimmer
-│       │   └── LocalizationManager.cs     # Dynamic Turkish/English runtime localization
-│       ├── UI/                        # Presentation layer (WPF / XAML)
-│       │   ├── MainWindow.xaml            # Modern flyout control panel & 2D keyboard map
-│       │   ├── ColorPickerWindow.xaml     # Windows 11-style HSV RGB color picker
-│       │   └── TrayIcon.cs                # System tray notification icon & live tooltip
-│       └── App.xaml                   # Application entry point & resource dictionaries
-├── scripts/                           # Build, package & Authenticode signing scripts
-│   └── build-and-sign.ps1             # Multi-target build and release packager
-├── docs/                              # Project documentation and banner imagery
-│   └── cover.png                      # Application showcase banner
-├── LICENSE                            # GNU General Public License v3.0
-└── E-Helper.slnx                      # Modern Visual Studio solution
-```
-
----
-
-## 🚀 Download & Quick Start
-
-1. Download the latest **[`E-Helper-win-x64.zip`](https://github.com/berkevnl/E-Helper/releases/latest/download/E-Helper-win-x64.zip)** package (~64 MB compressed).
-2. Extract the archive to your preferred folder (e.g., `C:\Program Files\E-Helper` or your personal user folder).
-3. Right-click `E-Helper.exe` and select **Run as Administrator** *(Administrator privileges are required by Windows to access ACPI WMI hardware management interfaces)*.
-4. E-Helper will dock into your **System Tray** (near the clock). Click the tray icon to open the flyout control panel!
-5. Check **Start with Windows** inside the app to enable seamless background startup with Windows Task Scheduler (no UAC prompts).
+Settings are stored in `%LOCALAPPDATA%\E-Helper\config.json`.
 
 > [!TIP]
-> **Why download the ZIP package?**
-> The standalone compressed ZIP package is **~64 MB**, compared to the ~156 MB uncompressed single-file executable. It downloads faster while containing the complete self-contained application and embedded .NET runtime.
+> The release also contains the uncompressed `E-Helper.exe` (~156 MB). The ZIP package (~64 MB) contains the same self-contained application and downloads faster.
 
----
+## How it works
 
-## 🛠️ Building from Source
+```
+┌──────────────────────────────────────────────────────────────┐
+│                 E-Helper  (WPF · .NET 8)                     │
+│   Tray flyout · Settings · Profile watcher · Auto-updater    │
+└───────────────┬───────────────────────────────┬──────────────┘
+                │ ACPI WMI (root\WMI)           │ NVML
+                ▼                               ▼
+     ┌──────────────────────┐        ┌──────────────────────┐
+     │  Casper / Quanta EC  │        │  NVIDIA GPU driver   │
+     │  power · fans · RGB  │        │  temp · fan · usage  │
+     └──────────────────────┘        └──────────────────────┘
+```
 
-### Prerequisites
-* Windows 10 / 11 (64-bit)
-* [.NET 8.0 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or later
-* Visual Studio 2022 (with *.NET Desktop Development* workload) or VS Code / JetBrains Rider
+- **EC bridge:** commands are sent as `SMI_STRUCT_S` packets through the `RW_GMWMI` WMI class.
+  - `0xFA00` read · `0xFB00` write
+  - Sub-functions: `0x0100` LED · `0x0200` CPU/GPU telemetry · `0x0205` fan speed · `0x0206` fan override · `0x0300` power mode
+- **NVML:** `nvml.dll` is loaded at runtime. If no NVIDIA driver is present, GPU readings are simply skipped.
+- **Startup:** a scheduled task with `HighestAvailable` run level starts E-Helper at logon; saved settings are re-applied shortly afterwards because the EC can reset its state during boot.
+- **Memory:** the working set is trimmed when the panel is hidden, keeping the tray footprint small.
+- **Privacy:** the only network request is the update check against the GitHub Releases API.
 
-### Build Steps
+## Building from source
+
+**Prerequisites:** Windows 10/11 x64, [.NET 8 SDK](https://dotnet.microsoft.com/download/dotnet/8.0) or newer.
+
 ```powershell
-# Clone the repository
 git clone https://github.com/berkevnl/E-Helper.git
 cd E-Helper
 
-# Restore dependencies and build release binary
+# Release build
 dotnet build src/EHelper/EHelper.csproj -c Release
 
-# Or generate self-contained standalone binaries and release ZIP packages
-powershell -ExecutionPolicy Bypass -File scripts/build-and-sign.ps1
+# Self-contained single-file build + release ZIP (output: publish-standalone\)
+powershell -ExecutionPolicy Bypass -File scripts/build-and-sign.ps1 -SkipSign
 ```
 
-The compiled standalone executable and release ZIP will be located in the `publish-standalone\` directory.
+The application version is defined once in `src/EHelper/EHelper.csproj`.
 
----
+### Project structure
 
-## 💖 Acknowledgments & Philosophy
+```
+src/EHelper/
+├── Core/          Domain types: power/LED enums, IHardwareProvider, AppProfile, hardware detection
+├── Hardware/
+│   ├── Casper/      EC bridge over ACPI WMI, SMI packet layout, Windows power plans
+│   ├── Common/      NVIDIA NVML interop
+│   └── Simulation/  Mock provider used on unsupported machines
+├── Services/      Telemetry polling, profile watcher, keyboard idle timer, updater,
+│                  startup task, localization, memory trimming
+├── Config/        Settings model and config.json persistence
+├── UI/            Settings, profile editor, color picker, tray icon, theme helpers
+├── MainWindow.*   Tray flyout panel
+└── App.*          Startup, single-instance handling, service wiring
+scripts/build-and-sign.ps1   Builds standalone + framework-dependent binaries and the release ZIP
+```
 
-This project is deeply inspired by **[G-Helper](https://github.com/seerge/g-helper)** created by **[Seerge](https://github.com/seerge)**. E-Helper aims to deliver that same clean, respectful, and ultra-lightweight computing experience directly to Casper Excalibur users.
+## Contributing
 
----
+Bug reports and pull requests are welcome. When reporting a hardware issue, please include your exact Excalibur model and BIOS version.
 
-## ⚖️ Trademarks & Legal Disclaimer
+## Acknowledgments
 
-* All product names, logos, and brands (including *Casper*, *Excalibur*, *Windows*, and *NVIDIA*) are property of their respective owners and are used strictly for hardware identification and compatibility purposes.
-* **E-Helper** is an independent, community-driven open-source project and is not affiliated with, endorsed by, or associated with Casper Bilgisayar Sistemleri A.Ş.
-* This software is distributed under the **GNU General Public License v3.0 (GPL-3.0)** in the hope that it will be useful, but WITHOUT ANY WARRANTY of any kind.
+Inspired by **[G-Helper](https://github.com/seerge/g-helper)** by [Seerge](https://github.com/seerge).
+
+## License & disclaimer
+
+Released under the **[GNU GPL v3.0](LICENSE)**, provided without any warranty.
+
+E-Helper is an independent community project and is not affiliated with or endorsed by Casper Bilgisayar Sistemleri A.Ş. *Casper*, *Excalibur*, *Windows* and *NVIDIA* are trademarks of their respective owners and are used only to describe compatibility.

@@ -7,9 +7,6 @@ namespace EHelper.Hardware.Simulation
     {
         private readonly Random _rand = new();
         private PowerMode _currentPowerMode = PowerMode.Gaming;
-        private LedMode _currentLedMode = LedMode.Static;
-        private byte _brightness = 2;
-        private (byte R, byte G, byte B) _color = (0, 150, 255);
 
         public string VendorName { get; }
         public string DeviceModel { get; }
@@ -32,35 +29,14 @@ namespace EHelper.Hardware.Simulation
             HasGpuModeSwitch: false
         );
 
-        public (byte R, byte G, byte B) CurrentColor => _color;
-        public byte CurrentBrightness => _brightness;
-        public LedMode CurrentLedMode => _currentLedMode;
-        public PowerMode CurrentPowerMode => _currentPowerMode;
-
         public HardwareTelemetry GetTelemetry()
         {
-            byte baseCpuTemp = _currentPowerMode switch
+            var (baseCpuTemp, baseGpuTemp, baseCpuRpm) = _currentPowerMode switch
             {
-                PowerMode.Office => (byte)45,
-                PowerMode.Gaming => (byte)68,
-                PowerMode.HighPerformance => (byte)78,
-                _ => (byte)50
-            };
-
-            byte baseGpuTemp = _currentPowerMode switch
-            {
-                PowerMode.Office => (byte)40,
-                PowerMode.Gaming => (byte)62,
-                PowerMode.HighPerformance => (byte)74,
-                _ => (byte)45
-            };
-
-            ushort baseCpuRpm = _currentPowerMode switch
-            {
-                PowerMode.Office => (ushort)1800,
-                PowerMode.Gaming => (ushort)3400,
-                PowerMode.HighPerformance => (ushort)4900,
-                _ => (ushort)2500
+                PowerMode.Office => (45, 40, 1800),
+                PowerMode.Gaming => (68, 62, 3400),
+                PowerMode.HighPerformance => (78, 74, 4900),
+                _ => (50, 45, 2500)
             };
 
             byte cpuTemp = (byte)(baseCpuTemp + _rand.Next(-2, 3));
@@ -91,31 +67,13 @@ namespace EHelper.Hardware.Simulation
 
         public void ResetFansToAuto() { }
 
-        public bool SetLed(LedZone zone, LedMode mode, byte brightness, byte r, byte g, byte b)
-        {
-            _currentLedMode = mode;
-            _brightness = brightness;
-            _color = (r, g, b);
-            return true;
-        }
+        public bool SetLed(LedZone zone, LedMode mode, byte brightness, byte r, byte g, byte b) => true;
 
-        public bool SetAllKeyboardLed(LedMode mode, byte brightness, byte r, byte g, byte b)
-        {
-            return SetLed(LedZone.AllKeyboard, mode, brightness, r, g, b);
-        }
+        public bool SetAllKeyboardLed(LedMode mode, byte brightness, byte r, byte g, byte b) => true;
 
-        public bool SetKeyboardTripleZone(byte brightness, (byte r, byte g, byte b) left, (byte r, byte g, byte b) center, (byte r, byte g, byte b) right)
-        {
-            _currentLedMode = LedMode.TripleZone;
-            _brightness = brightness;
-            _color = left;
-            return true;
-        }
+        public bool SetKeyboardTripleZone(byte brightness, (byte r, byte g, byte b) left, (byte r, byte g, byte b) center, (byte r, byte g, byte b) right) => true;
 
-        public bool TurnOffAllLights()
-        {
-            return SetLed(LedZone.All, LedMode.Off, 0, 0, 0, 0);
-        }
+        public bool TurnOffAllLights() => true;
 
         public void Dispose() { }
     }

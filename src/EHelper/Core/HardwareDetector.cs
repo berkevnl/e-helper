@@ -56,16 +56,7 @@ namespace EHelper.Core
                     if (!string.IsNullOrWhiteSpace(model)) modelName = model;
                     else if (!string.IsNullOrWhiteSpace(family)) modelName = family;
 
-                    if (mfg.Contains("Casper", StringComparison.OrdinalIgnoreCase) ||
-                        model.Contains("Excalibur", StringComparison.OrdinalIgnoreCase) ||
-                        family.Contains("Excalibur", StringComparison.OrdinalIgnoreCase) ||
-                        bbMfg.Contains("Casper", StringComparison.OrdinalIgnoreCase) ||
-                        bbProduct.Contains("G920", StringComparison.OrdinalIgnoreCase) ||
-                        bbProduct.Contains("G870", StringComparison.OrdinalIgnoreCase) ||
-                        bbProduct.Contains("G770", StringComparison.OrdinalIgnoreCase))
-                    {
-                        isExcalibur = true;
-                    }
+                    isExcalibur = IsExcaliburSystem(mfg, model, family) || IsExcaliburBoard(bbMfg, bbProduct);
 
                     if (isExcalibur || !string.IsNullOrWhiteSpace(mfg))
                     {
@@ -89,9 +80,7 @@ namespace EHelper.Core
                     if (!string.IsNullOrWhiteSpace(model)) modelName = model;
                     else if (!string.IsNullOrWhiteSpace(family)) modelName = family;
 
-                    if (mfg.Contains("Casper", StringComparison.OrdinalIgnoreCase) ||
-                        model.Contains("Excalibur", StringComparison.OrdinalIgnoreCase) ||
-                        family.Contains("Excalibur", StringComparison.OrdinalIgnoreCase))
+                    if (IsExcaliburSystem(mfg, model, family))
                     {
                         isExcalibur = true;
                     }
@@ -109,10 +98,7 @@ namespace EHelper.Core
                         string bbProduct = obj["Product"]?.ToString() ?? "";
                         string bbMfg = obj["Manufacturer"]?.ToString() ?? "";
 
-                        if (bbMfg.Contains("Casper", StringComparison.OrdinalIgnoreCase) ||
-                            bbProduct.Contains("G920", StringComparison.OrdinalIgnoreCase) ||
-                            bbProduct.Contains("G870", StringComparison.OrdinalIgnoreCase) ||
-                            bbProduct.Contains("G770", StringComparison.OrdinalIgnoreCase))
+                        if (IsExcaliburBoard(bbMfg, bbProduct))
                         {
                             isExcalibur = true;
                         }
@@ -124,12 +110,24 @@ namespace EHelper.Core
             return NormalizeModel(vendor, modelName, isExcalibur);
         }
 
+        private static readonly string[] KnownBoards = { "G920", "G870", "G770" };
+
+        private static bool ContainsIgnoreCase(string value, string token) => value.Contains(token, StringComparison.OrdinalIgnoreCase);
+
+        private static bool IsExcaliburSystem(string manufacturer, string model, string family) =>
+            ContainsIgnoreCase(manufacturer, "Casper") ||
+            ContainsIgnoreCase(model, "Excalibur") ||
+            ContainsIgnoreCase(family, "Excalibur");
+
+        private static bool IsExcaliburBoard(string boardManufacturer, string boardProduct) =>
+            ContainsIgnoreCase(boardManufacturer, "Casper") ||
+            Array.Exists(KnownBoards, board => ContainsIgnoreCase(boardProduct, board));
+
         private static (string Vendor, string Model, bool IsExcalibur) NormalizeModel(string vendor, string modelName, bool isExcalibur)
         {
-            if (modelName.Contains("G920", StringComparison.OrdinalIgnoreCase)) modelName = "Casper Excalibur G920";
-            else if (modelName.Contains("G870", StringComparison.OrdinalIgnoreCase)) modelName = "Casper Excalibur G870";
-            else if (modelName.Contains("G770", StringComparison.OrdinalIgnoreCase)) modelName = "Casper Excalibur G770";
-            else if (isExcalibur && !modelName.Contains("Excalibur", StringComparison.OrdinalIgnoreCase))
+            string? board = Array.Find(KnownBoards, b => ContainsIgnoreCase(modelName, b));
+            if (board != null) modelName = $"Casper Excalibur {board}";
+            else if (isExcalibur && !ContainsIgnoreCase(modelName, "Excalibur"))
                 modelName = $"Casper Excalibur ({modelName})";
             else if (!isExcalibur)
                 modelName = "Casper Excalibur";
